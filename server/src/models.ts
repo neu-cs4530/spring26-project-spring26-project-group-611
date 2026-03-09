@@ -114,9 +114,49 @@ export interface ThreadRecord {
  * - `password`: user's password
  * - `display`: A display name
  * - `createdAt`: when this user registered.
+ * - 'friends`: friends of this player
  */
 export interface UserRecord {
   username: string; // References Auth records
   display: string;
+  createdAt: DateISO;
+  friends: RecordId[]; // adding this for the final project
+}
+
+/**
+ * Represents sending a friend request in the database.
+ * - `fromUser`: User sending request
+ * - `toUser`: User recieving request
+ * - `status`: whether the request is pending, denied, or accepted
+ * - 'createdAt`: the date the friend request was sent
+ */
+export interface FriendRequestRecord {
+  fromUser: RecordId;
+  toUser: RecordId;
+  status: "pending" | "accepted" | "declined";
+  createdAt: DateISO;
+}
+
+/**
+ * Represents a direct message in the database.
+ * - `senderId`: the user who sent the message
+ * - `text`: the message contents
+ * - `createdAt`: when the message was sent
+ */
+export interface DirectMessageRecord {
+  senderId: RecordId;
+  text: string;
+  createdAt: DateISO;
+}
+
+/**
+ * Represents a direct message conversation between two users in the database.
+ * - `participants`: the two users in the conversation
+ * - `messages`: the ordered list of messages in the conversation
+ * - `createdAt`: when the conversation was created
+ */
+export interface ConversationRecord {
+  participants: RecordId[];
+  messages: RecordId[];
   createdAt: DateISO;
 }

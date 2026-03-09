@@ -3,10 +3,13 @@ import type {
   AuthRecord,
   ChatRecord,
   CommentRecord,
+  ConversationRecord,
+  DirectMessageRecord,
   GameRecord,
   MessageRecord,
   ThreadRecord,
   UserRecord,
+  FriendRequestRecord,
 } from "./models.ts";
 
 export const AuthRepo = createRepo<AuthRecord>("auth");
@@ -16,3 +19,6 @@ export const GameRepo = createRepo<GameRecord>("game");
 export const MessageRepo = createRepo<MessageRecord>("message");
 export const ThreadRepo = createRepo<ThreadRecord>("thread");
 export const UserRepo = createRepo<UserRecord>("user");
+export const FriendRequestRepo = createRepo<FriendRequestRecord>("friendRequest");
+export const ConversationRepo = createRepo<ConversationRecord>("convo");
+export const DirectMessageRepo = createRepo<DirectMessageRecord>("directmessage");
