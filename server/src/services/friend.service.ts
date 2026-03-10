@@ -1,4 +1,14 @@
 import { FriendRequestRepo, UserRepo } from "../repository.ts";
+import { populateSafeUserInfo } from "./user.service.ts";
+import type { SafeUserInfo } from "@gamenite/shared";
+
+/**
+ * Allows the backend to have access to the information about who is sending a friend request that can be used in the front end.
+ */
+export interface IncomingFriendRequestInfo {
+  requestId: string;
+  fromUser: SafeUserInfo;
+}
 
 /**
  * Allows a user to accept a friend request sent to them.
@@ -78,4 +88,54 @@ export async function declineFriendRequest(
   await FriendRequestRepo.set(requestId, request);
 
   return Promise.resolve();
+}
+
+/**
+ * Helper function to get all of the current friends of a user and turns it into usernames rather than ids.
+ * @param userID current user logged in
+ * @returns Resolves when the list of all the users friends are listed by username, or an error message if the user doesn't exist.
+ */
+export async function getCurrentFriends(
+  userID: string,
+): Promise<SafeUserInfo[] | { error: string }> {
+  const user = await UserRepo.find(userID);
+
+  if (!user) {
+    return Promise.resolve({ error: "User not found" });
+  }
+
+  const friends = await Promise.all(
+    user.friends.map(async (friendID) => populateSafeUserInfo(friendID)),
+  );
+
+  return Promise.resolve(friends);
+}
+
+/**
+ * Returns all of the incoming friend requests.
+ * @param userID Current user logged in
+ * @returns Resolves when the list of all incoming pending requests are listed, or an error message if the user doesn't exist.
+ */
+export async function getIncomingFriendRequests(
+  userID: string,
+): Promise<IncomingFriendRequestInfo[] | { error: string }> {
+  const user = await UserRepo.find(userID);
+
+  if (!user) {
+    return Promise.resolve({ error: "User not found" });
+  }
+
+  const requestKeys = await FriendRequestRepo.getAllKeys();
+  const requests = await FriendRequestRepo.getMany(requestKeys);
+
+  const incomingRequests = await Promise.all(
+    requests
+      .map((request, index) => ({ request, requestId: requestKeys[index] }))
+      .filter(({ request }) => request.toUser === userID && request.status === "pending")
+      .map(async ({ request, requestId }) => ({
+        requestId,
+        fromUser: await populateSafeUserInfo(request.fromUser),
+      })),
+  );
+  return Promise.resolve(incomingRequests);
 }
