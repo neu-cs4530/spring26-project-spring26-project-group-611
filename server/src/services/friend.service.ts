@@ -1,14 +1,6 @@
 import { FriendRequestRepo, UserRepo } from "../repository.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
-import type { SafeUserInfo } from "@gamenite/shared";
-
-/**
- * Allows the backend to have access to the information about who is sending a friend request that can be used in the front end.
- */
-export interface IncomingFriendRequestInfo {
-  requestId: string;
-  fromUser: SafeUserInfo;
-}
+import type { IncomingFriendRequestInfo, SafeUserInfo } from "@gamenite/shared";
 
 /**
  * Allows a user to accept a friend request sent to them.
