@@ -18,6 +18,7 @@ import ThreadPage from "./pages/ThreadPage.tsx";
 import { ErrorBoundary } from "react-error-boundary";
 import fallback from "./fallback.tsx";
 import NewThread from "./pages/NewThread.tsx";
+import FriendRequests from "./pages/FriendRequests.tsx";
 import TimeContextKeeper from "./components/UpdatingTimeContext.tsx";
 
 /** If `true`, all incoming socket messages will be logged */
@@ -69,6 +70,7 @@ export default function App() {
             <Route path="/game/new" element={<NewGame />} />
             <Route path="/game/:gameId" element={<Game />} />
             <Route path="/profile/:username" element={<Profile />} />
+            <Route path="/friends/requests" element={<FriendRequests />} />
             <Route path="/*" element={<NoSuchRoute />} />
           </Route>
         </Routes>

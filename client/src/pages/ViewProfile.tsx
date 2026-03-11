@@ -1,15 +1,21 @@
 import type { SafeUserInfo } from "@gamenite/shared";
 import { useEffect, useState } from "react";
 import useTimeSince from "../hooks/useTimeSince";
+import useLoginContext from "../hooks/useLoginContext";
 import { getUserById } from "../services/userService";
+import { sendFriendRequest } from "../services/friendService";
 
 interface ViewProfileProps {
   username: string;
 }
 export default function ViewProfile({ username }: ViewProfileProps) {
+  const { user, pass } = useLoginContext();
   const [componentState, setComponentState] = useState<
     { type: "waiting" } | { type: "error"; msg: string } | { type: "profile"; user: SafeUserInfo }
   >({ type: "waiting" });
+  const [requestState, setRequestState] = useState<
+    { type: "idle" } | { type: "sending" } | { type: "sent" } | { type: "error"; msg: string }
+  >({ type: "idle" });
   const timeSince = useTimeSince();
 
   useEffect(() => {
@@ -34,6 +40,21 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     };
   }, [username]);
 
+  const handleSendRequest = () => {
+    setRequestState({ type: "sending" });
+    sendFriendRequest({ username: user.username, password: pass }, username)
+      .then((res) => {
+        if ("error" in res) {
+          setRequestState({ type: "error", msg: res.error });
+        } else {
+          setRequestState({ type: "sent" });
+        }
+      })
+      .catch((err) => {
+        setRequestState({ type: "error", msg: `${err}` });
+      });
+  };
+
   switch (componentState.type) {
     case "error":
       return <div style={{ color: "#f00" }}>{componentState.msg}</div>;
@@ -48,6 +69,17 @@ export default function ViewProfile({ username }: ViewProfileProps) {
               <li>Username: {componentState.user.username}</li>
               <li>Account created {timeSince(componentState.user.createdAt)}</li>
             </ul>
+          </div>
+          <div>
+            {requestState.type === "sent" ? (
+              <p>Friend request sent!</p>
+            ) : (
+              <button onClick={handleSendRequest} disabled={requestState.type === "sending"}>
+                {requestState.type === "sending" ? "Sending" : "Send Friend Request"}
+              </button>
+            )}
+
+            {requestState.type === "error" && <p style={{ color: "#d00 " }}>{requestState.msg}</p>}
           </div>
         </>
       );

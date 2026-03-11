@@ -1,0 +1,35 @@
+.friend-requests {
+  padding: 1rem;
+}
+
+.friend-requests__error {
+  color: #d00;
+}
+
+.friend-requests__empty {
+  color: #888;
+  font-style: italic;
+}
+
+.friend-requests__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.friend-requests__item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.friend-requests__from {
+  font-weight: bold;
+}
+
+.friend-requests__time {
+  color: #666;
+  font-size: 0.875rem;
+}
