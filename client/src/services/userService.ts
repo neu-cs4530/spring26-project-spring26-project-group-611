@@ -63,3 +63,18 @@ export const getUserById = async (username: string): APIResponse<SafeUserInfo> =
     return exceptionToErrorMsg(error);
   }
 };
+
+/**
+ * Sends a GET request for a list of user's data
+ *
+ * @param username - The username (can be a partial)
+ * @returns A list of user's information that (partially) matches, or an error message
+ */
+export const searchUsers = async (username: string): APIResponse<SafeUserInfo[]> => {
+  try {
+    const res = await api.get<SafeUserInfo[] | ErrorMsg>(`${USER_API_URL}/search?=${username}`);
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};

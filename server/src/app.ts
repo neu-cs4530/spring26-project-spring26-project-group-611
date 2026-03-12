@@ -42,6 +42,7 @@ app.use(
         .post("/list", user.postList)
         .post("/login", user.postLogin)
         .post("/signup", user.postSignup)
+        .get("/search", user.getSearch)
         .post("/:username", user.postByUsername)
         .get("/:username", user.getByUsername),
     ),
