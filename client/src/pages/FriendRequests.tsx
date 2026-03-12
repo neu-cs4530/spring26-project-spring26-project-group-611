@@ -56,7 +56,7 @@ export default function FriendRequests() {
       <ul className="friend-requests__list">
         {state.requests.map((req) => (
           <li key={req.id} className="friend-requests__item">
-            <span className="friend-requests__from">{req.fromUsername}</span>
+            <span className="friend-requests__from">{req.fromDisplay}</span>
             <span className="friend-requests__time">
               {" "}
               sent a request {timeSince(new Date(req.createdAt))}

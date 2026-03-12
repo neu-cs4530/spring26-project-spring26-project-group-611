@@ -1,7 +1,7 @@
-<<<<<<< Updated upstream
 import { FriendRequestRepo, UserRepo } from "../repository.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
-import type { IncomingFriendRequestInfo, SafeUserInfo } from "@gamenite/shared";
+import type { FriendRequestInfo, SafeUserInfo } from "@gamenite/shared";
+import { getUserByUsername } from "./auth.service.ts";
 
 /**
  * Allows a user to accept a friend request sent to them.
@@ -105,84 +105,39 @@ export async function getCurrentFriends(
 }
 
 /**
- * Returns all of the incoming friend requests.
- * @param userID Current user logged in
- * @returns Resolves when the list of all incoming pending requests are listed, or an error message if the user doesn't exist.
- */
-export async function getIncomingFriendRequests(
-  userID: string,
-): Promise<IncomingFriendRequestInfo[] | { error: string }> {
-  const user = await UserRepo.find(userID);
-
-  if (!user) {
-    return Promise.resolve({ error: "User not found" });
-  }
-
-  const requestKeys = await FriendRequestRepo.getAllKeys();
-  const requests = await FriendRequestRepo.getMany(requestKeys);
-
-  const incomingRequests = await Promise.all(
-    requests
-      .map((request, index) => ({ request, requestId: requestKeys[index] }))
-      .filter(({ request }) => request.toUser === userID && request.status === "pending")
-      .map(async ({ request, requestId }) => ({
-        requestId,
-        fromUser: await populateSafeUserInfo(request.fromUser),
-      })),
-  );
-  return Promise.resolve(incomingRequests);
-=======
-import type { FriendRequestInfo } from "@gamenite/shared";
-import { FriendRequestRepo } from "../repository.ts";
-import { getUserByUsername } from "./auth.service.ts";
-
-/**
  * Convert a DB record + ID into a client safe FriendRequestInfo object
+ * Looks up usernames from RecordId to match the shared FriendRequestInfo type
  */
-function toFriendRequestInfo(
+async function toFriendRequestInfo(
   id: string,
   record: Awaited<ReturnType<typeof FriendRequestRepo.get>>,
-): FriendRequestInfo {
+): Promise<FriendRequestInfo> {
+  const fromUserRecord = await UserRepo.find(record.fromUser);
+  const toUserRecord = await UserRepo.find(record.toUser);
   return {
     id,
-    fromUsername: record.fromUsername,
-    toUsername: record.toUsername,
+    fromUsername: fromUserRecord?.username ?? record.fromUser,
+    fromDisplay: fromUserRecord?.display ?? fromUserRecord?.username ?? record.fromUser,
+    toUsername: toUserRecord?.username ?? record.toUser,
     status: record.status,
     createdAt: new Date(record.createdAt),
   };
 }
 
 /**
- * Retrieve all friend request where the given username is either sender or recipient and the status matches `status`
- */
-async function getRequestsByStatus(
-  username: string,
-  role: "from" | "to",
-  status: "pending" | "accepted" | "declined",
-): Promise<{ id: string; record: Awaited<ReturnType<typeof FriendRequestRepo.get>> }[]> {
-  const keys = await FriendRequestRepo.getAllKeys();
-  const results: { id: string; record: Awaited<ReturnType<typeof FriendRequestRepo.get>> }[] = [];
-  for (const key of keys) {
-    const rec = await FriendRequestRepo.find(key);
-    if (!rec) continue;
-    if (rec.status !== status) continue;
-    if (role === "from" && rec.fromUsername === username) results.push({ id: key, record: rec });
-    if (role === "to" && rec.toUsername === username) results.push({ id: key, record: rec });
-  }
-  return results;
-}
-
-/**
  * Returns true if `a` and `b` are already friends (i.e. an accepted request exists between them in either direction)
  */
-async function areFriends(a: string, b: string): Promise<boolean> {
+async function areFriends(fromUsername: string, toUsername: string): Promise<boolean> {
+  const from = await getUserByUsername(fromUsername);
+  const to = await getUserByUsername(toUsername);
+  if (!from || !to) return false;
   const keys = await FriendRequestRepo.getAllKeys();
   for (const key of keys) {
     const rec = await FriendRequestRepo.find(key);
     if (!rec || rec.status !== "accepted") continue;
     if (
-      (rec.fromUsername === a && rec.toUsername === b) ||
-      (rec.fromUsername === b && rec.toUsername === a)
+      (rec.fromUser === from.userId && rec.toUser === to.userId) ||
+      (rec.fromUser === to.userId && rec.toUser === from.userId)
     ) {
       return true;
     }
@@ -193,14 +148,17 @@ async function areFriends(a: string, b: string): Promise<boolean> {
 /**
  * Returns true if there is already a "pending" request between a and b in either direction
  */
-async function hasPendingRequest(a: string, b: string): Promise<boolean> {
+async function hasPendingRequest(fromUsername: string, toUsername: string): Promise<boolean> {
+  const from = await getUserByUsername(fromUsername);
+  const to = await getUserByUsername(toUsername);
+  if (!from || !to) return false;
   const keys = await FriendRequestRepo.getAllKeys();
   for (const key of keys) {
     const rec = await FriendRequestRepo.find(key);
     if (!rec || rec.status !== "pending") continue;
     if (
-      (rec.fromUsername === a && rec.toUsername === b) ||
-      (rec.fromUsername === b && rec.toUsername === a)
+      (rec.fromUser === from.userId && rec.toUser === to.userId) ||
+      (rec.fromUser === to.userId && rec.toUser === from.userId)
     ) {
       return true;
     }
@@ -228,8 +186,9 @@ export async function sendFriendRequest(
     return { error: "You cannot send a friend request to yourself" };
   }
   //target must exist
-  const target = await getUserByUsername(toUsername);
-  if (!target) {
+  const fromUser = await getUserByUsername(fromUsername);
+  const toUser = await getUserByUsername(toUsername);
+  if (!toUser || !fromUser) {
     return { error: "User not found" };
   }
   //cannot send if already friends
@@ -242,8 +201,8 @@ export async function sendFriendRequest(
   }
 
   const id = await FriendRequestRepo.add({
-    fromUsername,
-    toUsername,
+    fromUser: fromUser.userId,
+    toUser: toUser.userId,
     status: "pending",
     createdAt: new Date().toISOString(),
   });
@@ -258,8 +217,16 @@ export async function sendFriendRequest(
  *
  */
 export async function getIncomingFriendRequests(toUsername: string): Promise<FriendRequestInfo[]> {
-  const results = await getRequestsByStatus(toUsername, "to", "pending");
-  return results.map(({ id, record }) => toFriendRequestInfo(id, record));
+  const userRes = await getUserByUsername(toUsername);
+  if (!userRes) return [];
+  const keys = await FriendRequestRepo.getAllKeys();
+  const results: FriendRequestInfo[] = [];
+  for (const key of keys) {
+    const rec = await FriendRequestRepo.find(key);
+    if (!rec || rec.status !== "pending" || rec.toUser !== userRes.userId) continue;
+    results.push(await toFriendRequestInfo(key, rec));
+  }
+  return results;
 }
 
 /**
@@ -271,7 +238,14 @@ export async function getIncomingFriendRequests(toUsername: string): Promise<Fri
 export async function getOutgoingFriendRequests(
   fromUsername: string,
 ): Promise<FriendRequestInfo[]> {
-  const results = await getRequestsByStatus(fromUsername, "to", "pending");
-  return results.map(({ id, record }) => toFriendRequestInfo(id, record));
->>>>>>> Stashed changes
+  const userRes = await getUserByUsername(fromUsername);
+  if (!userRes) return [];
+  const keys = await FriendRequestRepo.getAllKeys();
+  const results: FriendRequestInfo[] = [];
+  for (const key of keys) {
+    const rec = await FriendRequestRepo.find(key);
+    if (!rec || rec.status !== "pending" || rec.fromUser !== userRes.userId) continue;
+    results.push(await toFriendRequestInfo(key, rec));
+  }
+  return results;
 }

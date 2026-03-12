@@ -160,17 +160,3 @@ export interface ConversationRecord {
   messages: RecordId[];
   createdAt: DateISO;
 }
-
-/**
- * Represents a friend request document in the database.
- * - `fromUsername` : username of the user who sent the request
- * - `toUsername` : username of the user who recieved the request
- * - `status` : current state of the request
- * - `createdAt` : when the request was sent
- */
-export interface FriendRequestRecord {
-  fromUsername: string;
-  toUsername: string;
-  status: "pending" | "accepted" | "declined";
-  createdAt: DateISO;
-}
