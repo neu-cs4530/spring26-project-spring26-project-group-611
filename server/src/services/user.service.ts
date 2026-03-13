@@ -41,6 +41,7 @@ export async function createUser(
     createdAt: createdAt.toISOString(),
     display: username,
     friends: [],
+    acceptGameInvites: true,
   });
   await updateAuth(username, password, id);
   return Promise.resolve({

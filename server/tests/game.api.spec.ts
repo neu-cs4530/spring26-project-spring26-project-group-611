@@ -40,6 +40,7 @@ describe("POST /api/game/create", () => {
       chat: expect.anything(),
       type: "nim",
       status: "waiting",
+      isPrivate: false,
       createdBy: {
         username: "user3",
         display: "Frau Drei",

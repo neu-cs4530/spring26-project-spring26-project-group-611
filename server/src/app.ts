@@ -7,6 +7,7 @@ import * as http from "node:http";
 import * as chat from "./controllers/chat.controller.ts";
 import * as friend from "./controllers/friends.controller.ts";
 import * as game from "./controllers/game.controller.ts";
+import * as gameInvite from "./controllers/game.invite.controller.ts";
 import * as user from "./controllers/user.controller.ts";
 import * as thread from "./controllers/thread.controller.ts";
 import { type GameServer } from "./types.ts";
@@ -52,6 +53,14 @@ app.use(
         .post("/send", friend.postSend)
         .post("/incoming", friend.postIncoming)
         .post("/outgoing", friend.postOutgoing),
+    )
+    .use(
+      "/game-invite",
+      Router()
+        .post("/send", gameInvite.postSend)
+        .post("/incoming", gameInvite.postIncoming)
+        .post("/outgoing", gameInvite.postOutgoing)
+        .post("/toggle-accept", gameInvite.postToggleAccept),
     ),
 );
 
