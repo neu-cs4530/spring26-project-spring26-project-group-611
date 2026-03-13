@@ -11,6 +11,7 @@ import { type SafeUserInfo } from "./user.types.ts";
  * - `createdAt`: when the game was created
  * - `createdBy`: username of the person who created the game
  * - `minPlayers`: the minimum number of players required to start the game
+ * - `ifPrivate` : whether the game is restricted to invited players only
  */
 export interface GameInfo {
   gameId: string;
@@ -21,7 +22,40 @@ export interface GameInfo {
   createdAt: Date;
   createdBy: SafeUserInfo;
   minPlayers: number;
+  isPrivate: boolean;
 }
+
+/**
+ * The possible states of a game invite
+ */
+export type GameInviteStatus = "pending" | "accepted" | "declined";
+
+/**
+ * A game invite as exposed to clients
+ * - `inviteId`: unique identifier of this invite
+ * - `gameId': the game this invite is for
+ * - `fromUsername` : the host who sent the invite
+ * - `toUsername`: the player who was invited
+ * - `status`: the current status of the invite
+ * - `createdAt`: when the invite was sent
+ */
+export interface GameInviteInfo {
+  inviteId: string;
+  gameId: string;
+  fromUsername: string;
+  toUsername: string;
+  status: GameInviteStatus;
+  createdAt: Date;
+}
+
+/**
+ * Zod schema + type for sending a game invite
+ */
+export type SendGameInvitePayload = z.infer<typeof zSendGameInvitePayload>;
+export const zSendGameInvitePayload = z.object({
+  gameId: z.string(),
+  toUsername: z.string(),
+});
 
 /**
  * Represents game information needed to load a view of a game, which may or

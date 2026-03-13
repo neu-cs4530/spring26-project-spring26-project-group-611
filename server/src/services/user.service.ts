@@ -42,6 +42,7 @@ export async function createUser(
     display: username,
     friends: [],
     canViewStats: true,
+    acceptGameInvites: true,
   });
   await updateAuth(username, password, id);
   return Promise.resolve({

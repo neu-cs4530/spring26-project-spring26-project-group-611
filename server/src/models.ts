@@ -70,6 +70,7 @@ export interface CommentRecord {
  * - `players`: active players for the game
  * - `createdAt`: when the game was created
  * - `createdBy`: username of the person who created the game
+ * - `isPrivate`: whether the game is invite-only
  */
 export interface GameRecord {
   type: GameKey;
@@ -80,6 +81,7 @@ export interface GameRecord {
   invitedPlayers?: RecordId[]; // References User records invited by the host
   createdAt: DateISO;
   createdBy: RecordId; // References User records
+  isPrivate: boolean;
 }
 
 /**
@@ -116,6 +118,7 @@ export interface ThreadRecord {
  * - `display`: A display name
  * - `createdAt`: when this user registered.
  * - 'friends`: friends of this player
+ * - `acceptGameInvites`: whether this user accepts game invitations from others
  */
 export interface UserRecord {
   username: string; // References Auth records
@@ -123,6 +126,7 @@ export interface UserRecord {
   createdAt: DateISO;
   friends: RecordId[]; // adding this for the final project
   canViewStats: boolean;
+  acceptGameInvites: boolean;
 }
 
 /**
@@ -133,6 +137,22 @@ export interface UserRecord {
  * - 'createdAt`: the date the friend request was sent
  */
 export interface FriendRequestRecord {
+  fromUser: RecordId;
+  toUser: RecordId;
+  status: "pending" | "accepted" | "declined";
+  createdAt: DateISO;
+}
+
+/**
+ * Represents a game invite in the database.
+ * - `gameId`: the game this invite is for
+ * - `fromUser`: user ID of the host who sent the request
+ * - `toUser`: user Id of the invited player
+ * - `status`: the status of the invite
+ * - `createdAt`: when the invite was sent
+ */
+export interface GameInviteRecord {
+  gameId: RecordId;
   fromUser: RecordId;
   toUser: RecordId;
   status: "pending" | "accepted" | "declined";
