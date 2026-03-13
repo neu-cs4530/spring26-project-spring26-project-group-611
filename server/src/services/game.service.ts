@@ -32,6 +32,7 @@ async function populateGameInfo(gameId: string): Promise<GameInfo> {
     type: game.type,
     status: !game.state ? "waiting" : game.done ? "done" : "active",
     minPlayers: gameServices[game.type].minPlayers,
+    visibility: game.visibility ?? "public",
   };
 }
 
@@ -47,6 +48,7 @@ export async function createGame(
   user: UserWithId,
   type: GameKey,
   createdAt: Date,
+  visibility?: "public" | "private",
 ): Promise<GameInfo> {
   const chat = await createChat(createdAt);
   const gameId = await GameRepo.add({
@@ -56,6 +58,7 @@ export async function createGame(
     createdAt: createdAt.toISOString(),
     createdBy: user.userId,
     players: [user.userId],
+    visibility: visibility,
   });
   return populateGameInfo(gameId);
 }
@@ -85,6 +88,13 @@ export async function getGameById(gameId: string): Promise<GameInfo | null> {
 export async function joinGame(gameId: string, user: UserWithId): Promise<GameInfo> {
   const game = await GameRepo.find(gameId);
   if (!game) throw new Error(`user ${user.username} joining invalid game`);
+  if (game.visibility === "private") {
+    const invited = game.invitees ?? [];
+
+    if (!invited.includes(user.userId) && user.userId !== game.createdBy) {
+      throw new Error(`user ${user.username} was not invited to private game`);
+    }
+  }
   if (game.state) {
     throw new Error(`user ${user.username} joining game that started`);
   }

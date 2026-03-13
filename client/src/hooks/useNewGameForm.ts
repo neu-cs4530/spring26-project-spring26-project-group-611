@@ -26,7 +26,10 @@ export default function useNewGameForm() {
     setGameKey(e.target.value as GameKey | "");
   };
 
-  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (
+    event: SubmitEvent<HTMLFormElement>,
+    visibility: "public" | "private",
+  ) => {
     event.preventDefault();
 
     if (gameKey === "") {
@@ -34,7 +37,7 @@ export default function useNewGameForm() {
       return;
     }
     setErr(null);
-    const game = await createGame(auth, gameKey);
+    const game = await createGame(auth, gameKey, visibility);
     if ("error" in game) {
       setErr(game.error);
       return;
