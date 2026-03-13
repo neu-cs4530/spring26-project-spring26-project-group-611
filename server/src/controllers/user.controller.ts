@@ -1,6 +1,13 @@
-import { type SafeUserInfo, withAuth, zUserAuth, zUserUpdateRequest } from "@gamenite/shared";
+import {
+  type ProfileViewInfo,
+  type SafeUserInfo,
+  withAuth,
+  zUserAuth,
+  zUserUpdateRequest,
+} from "@gamenite/shared";
 import {
   createUser,
+  getProfileViewByUsername,
   getUsersByUsername,
   populateSafeUserInfo,
   updateUser,
@@ -79,6 +86,34 @@ export const getByUsername: RestAPI<SafeUserInfo, { username: string }> = async 
     return;
   }
   res.send(await populateSafeUserInfo(user.userId));
+};
+
+/**
+ * Retrieves a profile as viewed by an authenticated user.
+ */
+export const postByUsernameView: RestAPI<ProfileViewInfo, { username: string }> = async (
+  req,
+  res,
+) => {
+  const body = withAuth(z.object({})).safeParse(req.body);
+  if (!body.success) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const viewer = await checkAuth(body.data.auth);
+  if (!viewer) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  const viewed = await getProfileViewByUsername(req.params.username, viewer.username);
+  if (!viewed) {
+    res.status(404).send({ error: "User not found" });
+    return;
+  }
+
+  res.send(viewed);
 };
 
 /**

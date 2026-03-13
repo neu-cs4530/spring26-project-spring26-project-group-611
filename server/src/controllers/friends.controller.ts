@@ -1,7 +1,15 @@
-import { withAuth, zSendFriendRequestPayload, type FriendRequestInfo } from "@gamenite/shared";
+import {
+  withAuth,
+  zFriendRequestActionPayload,
+  zSendFriendRequestPayload,
+  type FriendRequestInfo,
+  type SafeUserInfo,
+} from "@gamenite/shared";
 import { type RestAPI } from "../types.ts";
 import { checkAuth } from "../services/auth.service.ts";
 import {
+  acceptFriendRequest,
+  getCurrentFriends,
   getIncomingFriendRequests,
   getOutgoingFriendRequests,
   sendFriendRequest,
@@ -34,6 +42,34 @@ export const postSend: RestAPI<FriendRequestInfo> = async (req, res) => {
   }
 
   res.status(201).send(result);
+};
+
+/**
+ * POST /api/friend-request/accept
+ * Body: { auth: UserAuth, payload: { requestId: string } }
+ *
+ * Accepts a pending friend request sent to the authenticated user.
+ */
+export const postAccept: RestAPI<{ ok: true }> = async (req, res) => {
+  const body = withAuth(zFriendRequestActionPayload).safeParse(req.body);
+  if (!body.success) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const user = await checkAuth(body.data.auth);
+  if (!user) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  const result = await acceptFriendRequest(body.data.payload.requestId, user.userId);
+  if (result && "error" in result) {
+    res.status(400).send(result);
+    return;
+  }
+
+  res.send({ ok: true });
 };
 
 /**
@@ -79,4 +115,32 @@ export const postOutgoing: RestAPI<FriendRequestInfo[]> = async (req, res) => {
   }
   const requests = await getOutgoingFriendRequests(user.username);
   res.send(requests);
+};
+
+/**
+ * POST /api/friend-request/friends
+ * Body: { auth: UserAuth, payload: {} }
+ *
+ * Returns all accepted friends for the authenticated user.
+ */
+export const postFriends: RestAPI<SafeUserInfo[]> = async (req, res) => {
+  const body = withAuth(z.object({})).safeParse(req.body);
+  if (!body.success) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const user = await checkAuth(body.data.auth);
+  if (!user) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  const friends = await getCurrentFriends(user.userId);
+  if ("error" in friends) {
+    res.status(400).send(friends);
+    return;
+  }
+
+  res.send(friends);
 };

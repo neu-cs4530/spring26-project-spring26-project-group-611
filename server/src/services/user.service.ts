@@ -1,4 +1,4 @@
-import { type SafeUserInfo, type UserUpdateRequest } from "@gamenite/shared";
+import { type ProfileViewInfo, type SafeUserInfo, type UserUpdateRequest } from "@gamenite/shared";
 import { getUserByUsername, updateAuth } from "./auth.service.ts";
 import { UserRepo } from "../repository.ts";
 
@@ -41,6 +41,7 @@ export async function createUser(
     createdAt: createdAt.toISOString(),
     display: username,
     friends: [],
+    canViewStats: true,
   });
   await updateAuth(username, password, id);
   return Promise.resolve({
@@ -79,13 +80,39 @@ export async function getUsersByUsername(usernames: string[]): Promise<SafeUserI
  */
 export async function updateUser(
   username: string,
-  { display, password }: UserUpdateRequest,
+  { display, password, canViewStats }: UserUpdateRequest,
 ): Promise<SafeUserInfo> {
   const user = await getUserByUsername(username);
   if (!user) throw new Error(`No user ${username}`);
   if (password !== undefined) await updateAuth(username, password, user.userId);
   const newUser = await UserRepo.get(user.userId);
   if (display !== undefined) newUser.display = display;
+  if (canViewStats !== undefined) newUser.canViewStats = canViewStats;
   await UserRepo.set(user.userId, newUser);
   return populateSafeUserInfo(user.userId);
+}
+
+/**
+ * Returns profile information for `targetUsername` as viewed by `viewerUsername`.
+ * Personal information is friend-gated and stats visibility is controlled by target settings.
+ */
+export async function getProfileViewByUsername(
+  targetUsername: string,
+  viewerUsername: string,
+): Promise<ProfileViewInfo | null> {
+  const target = await getUserByUsername(targetUsername);
+  const viewer = await getUserByUsername(viewerUsername);
+  if (!target || !viewer) return null;
+
+  const targetRecord = await UserRepo.get(target.userId);
+  const isSelf = target.userId === viewer.userId;
+  const areFriends = targetRecord.friends.includes(viewer.userId);
+
+  return {
+    username: targetRecord.username,
+    display: targetRecord.display,
+    createdAt: isSelf || areFriends ? new Date(targetRecord.createdAt) : null,
+    areFriends,
+    canViewStats: isSelf || areFriends || (targetRecord.canViewStats ?? true),
+  };
 }

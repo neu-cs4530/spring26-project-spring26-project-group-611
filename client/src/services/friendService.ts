@@ -1,4 +1,4 @@
-import type { ErrorMsg, FriendRequestInfo, UserAuth } from "@gamenite/shared";
+import type { ErrorMsg, FriendRequestInfo, SafeUserInfo, UserAuth } from "@gamenite/shared";
 import { api, exceptionToErrorMsg } from "./api";
 import type { APIResponse } from "../util/types";
 
@@ -15,6 +15,24 @@ export const sendFriendRequest = async (
     const res = await api.post<FriendRequestInfo | ErrorMsg>(`${FRIEND_REQUEST_API_URL}/send`, {
       auth,
       payload: { toUsername },
+    });
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};
+
+/**
+ * Accepts a pending friend request for the authenticated user.
+ */
+export const acceptFriendRequest = async (
+  auth: UserAuth,
+  requestId: string,
+): APIResponse<{ ok: true }> => {
+  try {
+    const res = await api.post<{ ok: true } | ErrorMsg>(`${FRIEND_REQUEST_API_URL}/accept`, {
+      auth,
+      payload: { requestId },
     });
     return res.data;
   } catch (error) {
@@ -56,6 +74,21 @@ export const getOutgoingFriendRequests = async (
         payload: {},
       },
     );
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};
+
+/**
+ * Returns all accepted friends for the authenticated user.
+ */
+export const getCurrentFriends = async (auth: UserAuth): APIResponse<SafeUserInfo[]> => {
+  try {
+    const res = await api.post<SafeUserInfo[] | ErrorMsg>(`${FRIEND_REQUEST_API_URL}/friends`, {
+      auth,
+      payload: {},
+    });
     return res.data;
   } catch (error) {
     return exceptionToErrorMsg(error);

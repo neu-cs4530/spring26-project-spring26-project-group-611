@@ -39,6 +39,12 @@ export interface GamePlayInfo {
 
 /*** TYPES USED IN THE GAMES API ***/
 
+export type GameInvitePayload = z.infer<typeof zGameInvitePayload>;
+export const zGameInvitePayload = z.object({
+  gameId: z.string(),
+  toUsername: z.string(),
+});
+
 export type GameMakeMovePayload = z.infer<typeof zGameMakeMovePayload>;
 export const zGameMakeMovePayload = z.object({
   gameId: z.string(),

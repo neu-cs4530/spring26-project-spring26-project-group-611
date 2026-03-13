@@ -1,10 +1,17 @@
-import { type GameInfo, withAuth, zGameKey, zGameMakeMovePayload } from "@gamenite/shared";
+import {
+  type GameInfo,
+  withAuth,
+  zGameInvitePayload,
+  zGameKey,
+  zGameMakeMovePayload,
+} from "@gamenite/shared";
 import { type RestAPI, type GameViewUpdates, type SocketAPI, type GameServer } from "../types.ts";
 import {
   createGame,
   gameServices,
   getGameById,
   getGames,
+  invitePlayerToGame,
   joinGame,
   startGame,
   updateGame,
@@ -56,6 +63,35 @@ export const getById: RestAPI<GameInfo, { id: string }> = async (req, res) => {
  */
 export const getList: RestAPI<GameInfo[]> = async (req, res) => {
   res.send(await getGames());
+};
+
+/**
+ * Handle POST requests to `/api/game/invite` by adding an invitation from the
+ * host to another user.
+ */
+export const postInvite: RestAPI<{ gameId: string; toUsername: string }> = async (req, res) => {
+  const body = withAuth(zGameInvitePayload).safeParse(req.body);
+  if (body.error) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const user = await checkAuth(body.data.auth);
+  if (!user) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  try {
+    const invite = await invitePlayerToGame(
+      body.data.payload.gameId,
+      user,
+      body.data.payload.toUsername,
+    );
+    res.send(invite);
+  } catch (err) {
+    res.status(400).send({ error: err instanceof Error ? err.message : "Could not invite user" });
+  }
 };
 
 /**

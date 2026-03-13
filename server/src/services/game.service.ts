@@ -1,11 +1,12 @@
 import { type GameInfo, type GameKey, type TaggedGameView } from "@gamenite/shared";
 import { createChat } from "./chat.service.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
+import { getUserByUsername } from "./auth.service.ts";
 import { type GameServicer } from "../games/gameServiceManager.ts";
 import { nimGameService } from "../games/nim.ts";
 import { guessGameService } from "../games/guess.ts";
 import { type GameViewUpdates, type UserWithId } from "../types.ts";
-import { GameRepo } from "../repository.ts";
+import { GameRepo, UserRepo } from "../repository.ts";
 
 /**
  * The service interface for individual games
@@ -99,6 +100,48 @@ export async function joinGame(gameId: string, user: UserWithId): Promise<GameIn
   await GameRepo.set(gameId, game);
 
   return populateGameInfo(gameId);
+}
+
+/**
+ * Add a host invitation for a user to join a game.
+ *
+ * @param gameId - Ostensible game id
+ * @param host - Authenticated user creating the invite
+ * @param toUsername - Username to invite
+ * @returns game id and invited username
+ * @throws if game/user is invalid, host does not own game, invitee is not a friend, or invite is redundant
+ */
+export async function invitePlayerToGame(gameId: string, host: UserWithId, toUsername: string) {
+  const game = await GameRepo.find(gameId);
+  if (!game) throw new Error(`user ${host.username} inviting to invalid game`);
+  if (game.createdBy !== host.userId) {
+    throw new Error(`user ${host.username} inviting to game they do not host`);
+  }
+
+  const invitee = await getUserByUsername(toUsername);
+  if (!invitee) throw new Error(`user ${host.username} inviting nonexistent user`);
+  if (game.players.some((userId) => userId === invitee.userId)) {
+    throw new Error(`user ${host.username} inviting player already in game`);
+  }
+
+  const hostUser = await UserRepo.find(host.userId);
+  if (!hostUser) throw new Error(`user ${host.username} inviting with invalid host id`);
+  if (!hostUser.friends.includes(invitee.userId)) {
+    throw new Error("You can only invite friends to a private game");
+  }
+
+  const invitedPlayers = game.invitedPlayers ?? [];
+  if (invitedPlayers.includes(invitee.userId)) {
+    throw new Error(`user ${host.username} inviting user already invited`);
+  }
+
+  game.invitedPlayers = [...invitedPlayers, invitee.userId];
+  await GameRepo.set(gameId, game);
+
+  return {
+    gameId,
+    toUsername,
+  };
 }
 
 /**

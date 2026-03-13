@@ -1,11 +1,14 @@
 import "./GamePanel.css";
 import type { GameInfo } from "@gamenite/shared";
+import { useEffect, useMemo, useState } from "react";
 import { gameNames } from "../util/consts.ts";
 import useLoginContext from "../hooks/useLoginContext.ts";
 import GameDispatch from "../games/GameDispatch.tsx";
 import useSocketsForGame from "../hooks/useSocketsForGame.ts";
 import useTimeSince from "../hooks/useTimeSince.ts";
 import UserLink from "./UserLink.tsx";
+import { getCurrentFriends } from "../services/friendService.ts";
+import { inviteToGame } from "../services/gameService.ts";
 
 /**
  * A game panel allows viewing the status and players of a live game
@@ -16,14 +19,72 @@ export default function GamePanel({
   players: initialPlayers,
   createdAt,
   minPlayers,
+  createdBy,
 }: GameInfo) {
-  const { user } = useLoginContext();
+  const { user, pass } = useLoginContext();
   const timeSince = useTimeSince();
+  const [friendsState, setFriendsState] = useState<
+    | { type: "loading" }
+    | { type: "error"; message: string }
+    | { type: "loaded"; usernames: string[] }
+  >({ type: "loading" });
+  const [selectedFriend, setSelectedFriend] = useState<string>("");
+  const [inviteState, setInviteState] = useState<
+    { type: "idle" } | { type: "sending" } | { type: "sent" } | { type: "error"; message: string }
+  >({ type: "idle" });
+
+  const isHost = createdBy.username === user.username;
 
   const { view, players, userPlayerIndex, hasWatched, joinGame, startGame } = useSocketsForGame(
     gameId,
     initialPlayers,
   );
+
+  useEffect(() => {
+    if (!isHost) return;
+    let cancelled = false;
+
+    getCurrentFriends({ username: user.username, password: pass }).then((response) => {
+      if (cancelled) return;
+      if ("error" in response) {
+        setFriendsState({ type: "error", message: response.error });
+        return;
+      }
+      setFriendsState({ type: "loaded", usernames: response.map((friend) => friend.username) });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isHost, pass, user.username]);
+
+  const playersByUsername = useMemo(
+    () => new Set(players.map((player) => player.username)),
+    [players],
+  );
+  const invitableFriends = useMemo(() => {
+    if (friendsState.type !== "loaded") return [];
+    return friendsState.usernames.filter((username) => !playersByUsername.has(username));
+  }, [friendsState, playersByUsername]);
+
+  const effectiveSelectedFriend = useMemo(() => {
+    if (invitableFriends.includes(selectedFriend)) return selectedFriend;
+    return invitableFriends[0] ?? "";
+  }, [invitableFriends, selectedFriend]);
+
+  async function sendInvite(toUsername: string) {
+    if (!toUsername) return;
+    setInviteState({ type: "sending" });
+    const result = await inviteToGame(
+      { username: user.username, password: pass },
+      { gameId, toUsername },
+    );
+    if ("error" in result) {
+      setInviteState({ type: "error", message: result.error });
+      return;
+    }
+    setInviteState({ type: "sent" });
+  }
 
   return hasWatched ? (
     <div className="gamePanel">
@@ -59,6 +120,54 @@ export default function GamePanel({
             </button>
           )
         }
+        {isHost && !view && (
+          <div className="gameInviteBox">
+            <div className="gameInviteLabel">Invite a friend</div>
+            {friendsState.type === "loading" && (
+              <div className="smallAndGray">Loading friends...</div>
+            )}
+            {friendsState.type === "error" && (
+              <div className="error-message">Could not load friends: {friendsState.message}</div>
+            )}
+            {friendsState.type === "loaded" && (
+              <>
+                {invitableFriends.length === 0 ? (
+                  <div className="smallAndGray">No available friends to invite.</div>
+                ) : (
+                  <div className="gameInviteControls">
+                    <select
+                      value={effectiveSelectedFriend}
+                      aria-label="Select friend to invite"
+                      onChange={(event) => {
+                        setSelectedFriend(event.target.value);
+                        setInviteState({ type: "idle" });
+                      }}
+                    >
+                      {invitableFriends.map((username) => (
+                        <option key={username} value={username}>
+                          {username}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      className="primary narrow"
+                      onClick={() => void sendInvite(effectiveSelectedFriend)}
+                      disabled={!effectiveSelectedFriend || inviteState.type === "sending"}
+                    >
+                      {inviteState.type === "sending" ? "Inviting..." : "Invite"}
+                    </button>
+                  </div>
+                )}
+                {inviteState.type === "sent" && (
+                  <div className="smallAndGray">Invite sent to {effectiveSelectedFriend}.</div>
+                )}
+                {inviteState.type === "error" && (
+                  <div className="error-message">{inviteState.message}</div>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
       {view ? (
         <div className="gameFrame">

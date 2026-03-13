@@ -1,8 +1,8 @@
-import type { SafeUserInfo } from "@gamenite/shared";
+import type { ProfileViewInfo } from "@gamenite/shared";
 import { useEffect, useState } from "react";
 import useTimeSince from "../hooks/useTimeSince";
 import useLoginContext from "../hooks/useLoginContext";
-import { getUserById } from "../services/userService";
+import { viewProfile } from "../services/userService";
 import { sendFriendRequest } from "../services/friendService";
 
 interface ViewProfileProps {
@@ -11,7 +11,9 @@ interface ViewProfileProps {
 export default function ViewProfile({ username }: ViewProfileProps) {
   const { user, pass } = useLoginContext();
   const [componentState, setComponentState] = useState<
-    { type: "waiting" } | { type: "error"; msg: string } | { type: "profile"; user: SafeUserInfo }
+    | { type: "waiting" }
+    | { type: "error"; msg: string }
+    | { type: "profile"; user: ProfileViewInfo }
   >({ type: "waiting" });
   const [requestState, setRequestState] = useState<
     { type: "idle" } | { type: "sending" } | { type: "sent" } | { type: "error"; msg: string }
@@ -21,7 +23,7 @@ export default function ViewProfile({ username }: ViewProfileProps) {
   useEffect(() => {
     let cancel = false;
 
-    getUserById(username)
+    viewProfile({ username: user.username, password: pass }, username)
       .then((response) => {
         if (cancel) return;
         if ("error" in response) {
@@ -38,7 +40,7 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     return () => {
       cancel = true;
     };
-  }, [username]);
+  }, [username, user.username, pass]);
 
   const handleSendRequest = () => {
     setRequestState({ type: "sending" });
@@ -67,7 +69,13 @@ export default function ViewProfile({ username }: ViewProfileProps) {
           <div>
             <ul>
               <li>Username: {componentState.user.username}</li>
-              <li>Account created {timeSince(componentState.user.createdAt)}</li>
+              <li>
+                Account created{" "}
+                {componentState.user.createdAt
+                  ? timeSince(componentState.user.createdAt)
+                  : "hidden until you become friends"}
+              </li>
+              <li>Stats visibility: {componentState.user.canViewStats ? "visible" : "hidden"}</li>
             </ul>
           </div>
           <div>

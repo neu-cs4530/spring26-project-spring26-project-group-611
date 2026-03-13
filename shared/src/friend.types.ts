@@ -29,3 +29,11 @@ export type SendFriendRequestPayload = z.infer<typeof zSendFriendRequestPayload>
 export const zSendFriendRequestPayload = z.object({
   toUsername: z.string(),
 });
+
+/**
+ * Zod schema + type for acting on an existing friend request.
+ */
+export type FriendRequestActionPayload = z.infer<typeof zFriendRequestActionPayload>;
+export const zFriendRequestActionPayload = z.object({
+  requestId: z.string(),
+});
