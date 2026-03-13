@@ -7,8 +7,18 @@ export default function UpdateProfile() {
   const { user } = useLoginContext();
   const timeSince = useTimeSince();
   const [showPass, setShowPass] = useState(false);
-  const { display, setDisplay, password, setPassword, confirm, setConfirm, err, handleSubmit } =
-    useEditProfileForm();
+  const {
+    display,
+    setDisplay,
+    canViewStats,
+    setCanViewStats,
+    password,
+    setPassword,
+    confirm,
+    setConfirm,
+    err,
+    handleSubmit,
+  } = useEditProfileForm();
 
   return (
     <form className="content spacedSection" onSubmit={handleSubmit}>
@@ -80,6 +90,21 @@ export default function UpdateProfile() {
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
           />
+        </div>
+      </div>
+      <hr />
+      <div className="spacedSection">
+        <h3>Profile visibility</h3>
+        <div className="labeled-section">
+          <input
+            type="checkbox"
+            id="canViewStatsToggle"
+            checked={canViewStats}
+            onChange={() => setCanViewStats((v) => !v)}
+          />
+          <label htmlFor="canViewStatsToggle">
+            Allow non-friends to view my stats and public profile details
+          </label>
         </div>
       </div>
       <hr />

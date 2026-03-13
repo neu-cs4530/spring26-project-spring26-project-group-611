@@ -42,3 +42,24 @@ export const gameList = async (): APIResponse<GameInfo[]> => {
     return exceptionToErrorMsg(error);
   }
 };
+
+/**
+ * Sends a host invite for a user to join a game.
+ */
+export const inviteToGame = async (
+  auth: UserAuth,
+  payload: { gameId: string; toUsername: string },
+): APIResponse<{ gameId: string; toUsername: string }> => {
+  try {
+    const res = await api.post<{ gameId: string; toUsername: string } | ErrorMsg>(
+      `${GAME_API_URL}/invite`,
+      {
+        auth,
+        payload,
+      },
+    );
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};

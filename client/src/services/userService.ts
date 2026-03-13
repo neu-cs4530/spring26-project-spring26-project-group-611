@@ -1,6 +1,12 @@
 import type { APIResponse } from "../util/types.ts";
 import { api, exceptionToErrorMsg } from "./api.ts";
-import type { ErrorMsg, SafeUserInfo, UserAuth, UserUpdateRequest } from "@gamenite/shared";
+import type {
+  ErrorMsg,
+  ProfileViewInfo,
+  SafeUserInfo,
+  UserAuth,
+  UserUpdateRequest,
+} from "@gamenite/shared";
 
 const USER_API_URL = `/api/user`;
 
@@ -58,6 +64,24 @@ export const signupUser = async (user: UserAuth): APIResponse<SafeUserInfo> => {
 export const getUserById = async (username: string): APIResponse<SafeUserInfo> => {
   try {
     const res = await api.get<SafeUserInfo | ErrorMsg>(`${USER_API_URL}/${username}`);
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};
+
+/**
+ * Sends an authenticated request to view a user's profile with visibility rules.
+ */
+export const viewProfile = async (
+  auth: UserAuth,
+  username: string,
+): APIResponse<ProfileViewInfo> => {
+  try {
+    const res = await api.post<ProfileViewInfo | ErrorMsg>(`${USER_API_URL}/${username}/view`, {
+      auth,
+      payload: {},
+    });
     return res.data;
   } catch (error) {
     return exceptionToErrorMsg(error);

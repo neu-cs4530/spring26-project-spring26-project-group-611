@@ -26,6 +26,7 @@ app.use(
       express
         .Router() //
         .post("/create", game.postCreate)
+        .post("/invite", game.postInvite)
         .get("/list", game.getList)
         .get("/:id", game.getById),
     )
@@ -44,6 +45,7 @@ app.use(
         .post("/list", user.postList)
         .post("/login", user.postLogin)
         .post("/signup", user.postSignup)
+        .post("/:username/view", user.postByUsernameView)
         .post("/:username", user.postByUsername)
         .get("/:username", user.getByUsername),
     )
@@ -51,8 +53,10 @@ app.use(
       "/friend-request",
       Router()
         .post("/send", friend.postSend)
+        .post("/accept", friend.postAccept)
         .post("/incoming", friend.postIncoming)
-        .post("/outgoing", friend.postOutgoing),
+        .post("/outgoing", friend.postOutgoing)
+        .post("/friends", friend.postFriends),
     )
     .use(
       "/game-invite",

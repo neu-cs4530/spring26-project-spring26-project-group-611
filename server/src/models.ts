@@ -78,6 +78,7 @@ export interface GameRecord {
   done: boolean;
   chat: RecordId; // References Chat records
   players: RecordId[]; // References User records
+  invitedPlayers?: RecordId[]; // References User records invited by the host
   createdAt: DateISO;
   createdBy: RecordId; // References User records
   isPrivate: boolean;
@@ -124,6 +125,7 @@ export interface UserRecord {
   display: string;
   createdAt: DateISO;
   friends: RecordId[]; // adding this for the final project
+  canViewStats: boolean;
   acceptGameInvites: boolean;
 }
 

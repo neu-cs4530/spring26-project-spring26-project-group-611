@@ -1,5 +1,7 @@
 .friend-requests {
   padding: 1rem;
+  display: grid;
+  gap: 1.5rem;
 }
 
 .friend-requests__error {
@@ -18,11 +20,16 @@
 }
 
 .friend-requests__item {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8rem;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem 0;
+  column-gap: 1.5rem;
+  padding: 0.75rem 0;
   border-bottom: 1px solid #eee;
+}
+
+.friend-requests__details {
+  min-width: 0;
 }
 
 .friend-requests__from {
@@ -32,4 +39,32 @@
 .friend-requests__time {
   color: #666;
   font-size: 0.875rem;
+}
+
+.friend-requests__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.friend-requests__friends-section {
+  padding-top: 0.5rem;
+}
+
+.friend-requests__friends-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.friend-requests__friend-item {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.friend-requests__handle {
+  color: #666;
+  font-size: 0.9rem;
 }

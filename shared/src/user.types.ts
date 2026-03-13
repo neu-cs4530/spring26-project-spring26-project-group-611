@@ -13,6 +13,17 @@ export interface SafeUserInfo {
   createdAt: Date;
 }
 
+/**
+ * Profile view information for rendering another user's profile with visibility rules.
+ */
+export interface ProfileViewInfo {
+  username: string;
+  display: string;
+  createdAt: Date | null;
+  areFriends: boolean;
+  canViewStats: boolean;
+}
+
 /*** TYPES USED IN THE USER API ***/
 
 /**
@@ -22,4 +33,5 @@ export type UserUpdateRequest = z.infer<typeof zUserUpdateRequest>;
 export const zUserUpdateRequest = z.object({
   password: z.string().optional(),
   display: z.string().optional(),
+  canViewStats: z.boolean().optional(),
 });

@@ -15,6 +15,7 @@ import type { UserUpdateRequest } from "@gamenite/shared";
 export default function useEditProfileForm() {
   const { user, reset } = useLoginContext();
   const [display, setDisplay] = useState(user.display);
+  const [canViewStats, setCanViewStats] = useState(true);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [err, setErr] = useState<null | string>(null);
@@ -26,7 +27,7 @@ export default function useEditProfileForm() {
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (user.display === display && password === confirm && password === "") {
+    if (user.display === display && password === confirm && password === "" && canViewStats) {
       setErr("No changes to submit");
       return;
     }
@@ -54,6 +55,7 @@ export default function useEditProfileForm() {
     const updates: UserUpdateRequest = {};
     if (display !== user.display) updates.display = display;
     if (password !== "") updates.password = password;
+    updates.canViewStats = canViewStats;
     const response = await updateUser(auth, updates);
     if ("error" in response) {
       setErr(response.error);
@@ -67,6 +69,8 @@ export default function useEditProfileForm() {
   return {
     display,
     setDisplay,
+    canViewStats,
+    setCanViewStats,
     password,
     setPassword,
     confirm,
