@@ -111,6 +111,17 @@ export async function updateUser(
 }
 
 /**
+ *  Determines whether a profile viewer can see target game stats.
+ */
+export function canViewerSeeStats(
+  isSelf: boolean,
+  areFriends: boolean,
+  targetCanViewStats: boolean | undefined,
+): boolean {
+  return isSelf || areFriends || (targetCanViewStats ?? true);
+}
+
+/**
  * Returns profile information for `targetUsername` as viewed by `viewerUsername`.
  * Personal information is friend-gated and stats visibility is controlled by target settings.
  */
@@ -131,6 +142,6 @@ export async function getProfileViewByUsername(
     display: targetRecord.display,
     createdAt: isSelf || areFriends ? new Date(targetRecord.createdAt) : null,
     areFriends,
-    canViewStats: isSelf || areFriends || (targetRecord.canViewStats ?? true),
+    canViewStats: canViewerSeeStats(isSelf, areFriends, targetRecord.canViewStats),
   };
 }
