@@ -72,6 +72,23 @@ export async function getUsersByUsername(usernames: string[]): Promise<SafeUserI
 }
 
 /**
+ * Search for users whose usernames contain the given query
+ */
+export async function searchUsersByUsername(query: string): Promise<SafeUserInfo[]> {
+  const keys = await UserRepo.getAllKeys();
+  const users = await UserRepo.getMany(keys);
+
+  return users
+    .filter((u) => u.username.toLowerCase().includes(query.toLowerCase()))
+    .slice(0, 20)
+    .map((u) => ({
+      username: u.username,
+      display: u.display,
+      createdAt: new Date(u.createdAt),
+    }));
+}
+
+/**
  * Updates user information in the database
  *
  * @param username - A valid username for the user to update

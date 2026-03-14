@@ -46,6 +46,7 @@ app.use(
         .post("/login", user.postLogin)
         .post("/signup", user.postSignup)
         .post("/:username/view", user.postByUsernameView)
+        .get("/search", user.getSearch)
         .post("/:username", user.postByUsername)
         .get("/:username", user.getByUsername),
     )

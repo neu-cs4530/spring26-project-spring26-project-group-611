@@ -11,7 +11,7 @@ import { type SafeUserInfo } from "./user.types.ts";
  * - `createdAt`: when the game was created
  * - `createdBy`: username of the person who created the game
  * - `minPlayers`: the minimum number of players required to start the game
- * - `ifPrivate` : whether the game is restricted to invited players only
+ * - `visibility`: private or public game
  */
 export interface GameInfo {
   gameId: string;
@@ -22,7 +22,7 @@ export interface GameInfo {
   createdAt: Date;
   createdBy: SafeUserInfo;
   minPlayers: number;
-  isPrivate: boolean;
+  visibility: "public" | "private";
 }
 
 /**
@@ -99,6 +99,17 @@ export * from "./games/guess.types.ts";
  */
 export type GameKey = z.infer<typeof zGameKey>;
 export const zGameKey = z.union([z.literal("nim"), z.literal("guess")]);
+
+/**
+ * A GameCreatePayload consists of GameKey and an extra visibility option to
+ * support private games.
+ */
+export const zGameCreatePayload = z.object({
+  type: zGameKey,
+  visibility: z.enum(["public", "private"]).optional(),
+});
+
+export type GameCreatePayload = z.infer<typeof zGameCreatePayload>;
 
 /**
  * The TaggedGameView type allows the views for different game to be

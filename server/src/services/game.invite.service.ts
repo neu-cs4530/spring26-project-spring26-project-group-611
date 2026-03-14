@@ -46,7 +46,7 @@ export async function sendGameInvite(
   if (!game) {
     return { error: "Game not found" };
   }
-  if (!game.isPrivate) {
+  if (game.visibility === "public") {
     return { error: "Cannot send invites for a public game" };
   }
   if (game.createdBy !== hostUserId) {

@@ -2,7 +2,7 @@ import {
   type GameInfo,
   withAuth,
   zGameInvitePayload,
-  zGameKey,
+  zGameCreatePayload,
   zGameMakeMovePayload,
 } from "@gamenite/shared";
 import { type RestAPI, type GameViewUpdates, type SocketAPI, type GameServer } from "../types.ts";
@@ -27,7 +27,7 @@ import { checkAuth, enforceAuth } from "../services/auth.service.ts";
  * starts with one player, the user who made the POST request.
  */
 export const postCreate: RestAPI<GameInfo> = async (req, res) => {
-  const body = withAuth(zGameKey).safeParse(req.body);
+  const body = withAuth(zGameCreatePayload).safeParse(req.body);
   if (body.error) {
     res.status(400).send({ error: "Poorly-formed request" });
     return;
@@ -39,7 +39,9 @@ export const postCreate: RestAPI<GameInfo> = async (req, res) => {
     return;
   }
 
-  const game = await createGame(user, body.data.payload, new Date());
+  const { type, visibility } = body.data.payload;
+
+  const game = await createGame(user, type, new Date(), visibility);
   res.send(game);
 };
 

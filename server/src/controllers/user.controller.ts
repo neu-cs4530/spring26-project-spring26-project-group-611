@@ -10,6 +10,7 @@ import {
   getProfileViewByUsername,
   getUsersByUsername,
   populateSafeUserInfo,
+  searchUsersByUsername,
   updateUser,
 } from "../services/user.service.ts";
 import { type RestAPI } from "../types.ts";
@@ -135,4 +136,23 @@ export const postList: RestAPI<SafeUserInfo[]> = async (req, res) => {
   }
 
   res.send(users);
+};
+
+/**
+ * Search for users by username (partial matches allowed)
+ */
+export const getSearch: RestAPI<SafeUserInfo[]> = async (req, res) => {
+  const query = z.string().safeParse(req.query.username);
+
+  if (!query.success) {
+    res.status(400).send({ error: "Username query required" });
+    return;
+  }
+
+  try {
+    const users = await searchUsersByUsername(query.data);
+    res.send(users);
+  } catch {
+    res.status(500).send({ error: "Failed to search users" });
+  }
 };

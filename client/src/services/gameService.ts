@@ -7,11 +7,18 @@ const GAME_API_URL = `/api/game`;
 /**
  * Sends a POST request to create a game
  */
-export const createGame = async (auth: UserAuth, gameKey: GameKey): APIResponse<GameInfo> => {
+export const createGame = async (
+  auth: UserAuth,
+  gameKey: GameKey,
+  visibility: "public" | "private",
+): APIResponse<GameInfo> => {
   try {
     const res = await api.post<GameInfo | ErrorMsg>(`${GAME_API_URL}/create`, {
       auth,
-      payload: gameKey,
+      payload: {
+        type: gameKey,
+        visibility: visibility,
+      },
     });
     return res.data;
   } catch (error) {
