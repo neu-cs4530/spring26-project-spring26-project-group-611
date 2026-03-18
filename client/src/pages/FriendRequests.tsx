@@ -8,9 +8,10 @@ import {
   getCurrentFriends,
   getIncomingFriendRequests,
   sendFriendRequest,
+  getOutgoingFriendRequests,
 } from "../services/friendService";
-import "./FriendRequests.css";
 import { searchUsers } from "../services/userService";
+import "./FriendRequests.css";
 
 export default function FriendRequests() {
   const { user, pass } = useLoginContext();
@@ -18,7 +19,12 @@ export default function FriendRequests() {
   const [state, setState] = useState<
     | { type: "loading" }
     | { type: "error"; msg: string }
-    | { type: "loaded"; requests: FriendRequestInfo[]; friends: SafeUserInfo[] }
+    | {
+        type: "loaded";
+        requests: FriendRequestInfo[];
+        outgoing: FriendRequestInfo[];
+        friends: SafeUserInfo[];
+      }
   >({ type: "loading" });
   const [pendingRequestId, setPendingRequestId] = useState<string | null>(null);
 
@@ -34,8 +40,9 @@ export default function FriendRequests() {
     Promise.all([
       getIncomingFriendRequests({ username: user.username, password: pass }),
       getCurrentFriends({ username: user.username, password: pass }),
+      getOutgoingFriendRequests({ username: user.username, password: pass }),
     ])
-      .then(([requestsRes, friendsRes]) => {
+      .then(([requestsRes, friendsRes, outgoingRes]) => {
         if (cancelled) return;
         if ("error" in requestsRes) {
           setState({ type: "error", msg: requestsRes.error });
@@ -45,7 +52,16 @@ export default function FriendRequests() {
           setState({ type: "error", msg: friendsRes.error });
           return;
         }
-        setState({ type: "loaded", requests: requestsRes, friends: friendsRes });
+        if ("error" in outgoingRes) {
+          setState({ type: "error", msg: outgoingRes.error });
+          return;
+        }
+        setState({
+          type: "loaded",
+          requests: requestsRes,
+          friends: friendsRes,
+          outgoing: outgoingRes,
+        });
       })
       .catch((err) => {
         if (cancelled) return;
@@ -98,8 +114,17 @@ export default function FriendRequests() {
     }
 
     setSearchError("");
+    setState((current) => {
+      if (current.type !== "loaded") return current;
+
+      return {
+        ...current,
+        outgoing: [...current.outgoing, result],
+      };
+    });
     return;
   };
+
   const handleAccept = async (request: FriendRequestInfo) => {
     setPendingRequestId(request.id);
     const result = await acceptFriendRequest(
@@ -126,6 +151,7 @@ export default function FriendRequests() {
       return {
         type: "loaded",
         requests: current.requests.filter((existing) => existing.id !== request.id),
+        outgoing: current.outgoing,
         friends: friendsRes,
       };
     });
@@ -171,6 +197,11 @@ export default function FriendRequests() {
           <input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                void handleSearch();
+              }
+            }}
             placeholder="Search by username"
           />
           <button onClick={() => void handleSearch()} disabled={searching}>
@@ -180,6 +211,10 @@ export default function FriendRequests() {
 
         {searchError && <p className="friend-requests__error">{searchError}</p>}
 
+        {!searching && searchTerm.trim() !== "" && searchResults.length === 0 && !searchError && (
+          <p className="friend-requests__empty">No users found.</p>
+        )}
+
         {searchResults.length > 0 && (
           <ul className="friend-requests__list">
             {searchResults.map((foundUser: SafeUserInfo) => (
@@ -188,7 +223,7 @@ export default function FriendRequests() {
                   <span className="friend-requests__from">{foundUser.display}</span>
                   <span className="friend-requests__handle">@{foundUser.username}</span>
                 </div>
-                <div className="friend-requests__search">
+                <div className="friend-requests__actions">
                   <button
                     className="primary narrow"
                     onClick={() => void handleSendFriendRequest(foundUser.username)}
@@ -196,6 +231,27 @@ export default function FriendRequests() {
                   >
                     {sendingTo === foundUser.username ? "Sending..." : "Add Friend"}
                   </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Pending Friend Requests</h2>
+
+        {state.outgoing.length === 0 ? (
+          <p className="friend-requests__empty">No pending requests.</p>
+        ) : (
+          <ul className="friend-requests__list">
+            {state.outgoing.map((req) => (
+              <li key={req.id} className="friend-requests__item">
+                <div className="friend-requests__details">
+                  <span className="friend-requests__from">@{req.toUsername}</span>
+                  <span className="friend-requests__time">
+                    request sent {timeSince(new Date(req.createdAt))}
+                  </span>
                 </div>
               </li>
             ))}
