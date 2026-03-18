@@ -165,7 +165,7 @@ export const postFriends: RestAPI<SafeUserInfo[]> = async (req, res) => {
     return;
   }
 
-  const friends = await getCurrentFriends(user.username);
+  const friends = await getCurrentFriends(user.userId);
   if ("error" in friends) {
     res.status(400).send(friends);
     return;
