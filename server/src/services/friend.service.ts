@@ -35,6 +35,9 @@ export async function acceptFriendRequest(
     return { error: "One or more users no longer exist" };
   }
 
+  sender.friends = sender.friends ?? [];
+  receiver.friends = receiver.friends ?? [];
+
   // add each other as friends if we are not already friends
   if (!sender.friends.includes(request.toUser)) {
     sender.friends.push(request.toUser);
@@ -97,8 +100,10 @@ export async function getCurrentFriends(
     return Promise.resolve({ error: "User not found" });
   }
 
+  const friendIds = user.friends ?? [];
+
   const friends = await Promise.all(
-    user.friends.map(async (friendID) => populateSafeUserInfo(friendID)),
+    friendIds.map(async (friendID) => populateSafeUserInfo(friendID)),
   );
 
   return Promise.resolve(friends);

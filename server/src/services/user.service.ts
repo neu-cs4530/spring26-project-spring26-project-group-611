@@ -135,7 +135,7 @@ export async function getProfileViewByUsername(
 
   const targetRecord = await UserRepo.get(target.userId);
   const isSelf = target.userId === viewer.userId;
-  const areFriends = targetRecord.friends.includes(viewer.userId);
+  const areFriends = (targetRecord.friends ?? []).includes(viewer.userId);
 
   return {
     username: targetRecord.username,
