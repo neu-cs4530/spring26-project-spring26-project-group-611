@@ -94,3 +94,18 @@ export const getCurrentFriends = async (auth: UserAuth): APIResponse<SafeUserInf
     return exceptionToErrorMsg(error);
   }
 };
+
+export const declineFriendRequest = async (
+  auth: UserAuth,
+  requestId: string,
+): APIResponse<{ ok: true }> => {
+  try {
+    const res = await api.post<{ ok: true } | ErrorMsg>(`${FRIEND_REQUEST_API_URL}/decline`, {
+      auth,
+      payload: { requestId },
+    });
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};

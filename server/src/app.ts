@@ -55,6 +55,7 @@ app.use(
       Router()
         .post("/send", friend.postSend)
         .post("/accept", friend.postAccept)
+        .post("/decline", friend.postDecline)
         .post("/incoming", friend.postIncoming)
         .post("/outgoing", friend.postOutgoing)
         .post("/friends", friend.postFriends),

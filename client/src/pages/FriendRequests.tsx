@@ -4,6 +4,7 @@ import useLoginContext from "../hooks/useLoginContext";
 import useTimeSince from "../hooks/useTimeSince";
 import {
   acceptFriendRequest,
+  declineFriendRequest,
   getCurrentFriends,
   getIncomingFriendRequests,
 } from "../services/friendService";
@@ -79,6 +80,30 @@ export default function FriendRequests() {
     });
   };
 
+  const handleDecline = async (request: FriendRequestInfo) => {
+    setPendingRequestId(request.id);
+    const result = await declineFriendRequest(
+      { username: user.username, password: pass },
+      request.id,
+    );
+
+    if ("error" in result) {
+      setPendingRequestId(null);
+      setState({ type: "error", msg: result.error });
+      return;
+    }
+
+    setPendingRequestId(null);
+
+    setState((current) => {
+      if (current.type !== "loaded") return current;
+      return {
+        ...current,
+        requests: current.requests.filter((existing) => existing.id !== request.id),
+      };
+    });
+  };
+
   if (state.type === "loading") {
     return <div className="friend-requests">Loading friend requests...</div>;
   }
@@ -108,6 +133,14 @@ export default function FriendRequests() {
                     disabled={pendingRequestId === req.id}
                   >
                     {pendingRequestId === req.id ? "Accepting..." : "Accept"}
+                  </button>
+
+                  <button
+                    className="secondary narrow"
+                    onClick={() => void handleDecline(req)}
+                    disabled={pendingRequestId === req.id}
+                  >
+                    Decline
                   </button>
                 </div>
               </li>

@@ -1,9 +1,9 @@
 import "./FriendRequestPanel.css";
 import { useEffect, useState } from "react";
-import type { IncomingFriendRequestInfo, SafeUserInfo } from "@gamenite/shared";
+import type { FriendRequestInfo, SafeUserInfo } from "@gamenite/shared";
 
 interface FriendRequestPanelProps {
-  incomingRequests: IncomingFriendRequestInfo[];
+  incomingRequests: FriendRequestInfo[];
   currentFriends: SafeUserInfo[];
   handleAcceptFriendRequest: (requestId: string) => Promise<void | { error: string }>;
   handleDeclineFriendRequest: (requestId: string) => Promise<void | { error: string }>;
@@ -15,7 +15,7 @@ export default function FriendRequestPanel({
   handleAcceptFriendRequest,
   handleDeclineFriendRequest,
 }: FriendRequestPanelProps) {
-  const [requests, setRequests] = useState<IncomingFriendRequestInfo[]>(incomingRequests);
+  const [requests, setRequests] = useState<FriendRequestInfo[]>(incomingRequests);
   const [friends, setFriends] = useState<SafeUserInfo[]>(currentFriends);
   const [error, setError] = useState<string>("");
 
@@ -27,19 +27,24 @@ export default function FriendRequestPanel({
     setFriends(currentFriends);
   }, [currentFriends]);
 
-  async function onAccept(request: IncomingFriendRequestInfo) {
-    const result = await handleAcceptFriendRequest(request.requestId);
+  async function onAccept(request: FriendRequestInfo) {
+    const result = await handleAcceptFriendRequest(request.id);
 
     if (result && "error" in result) {
       setError(result.error);
       return;
     }
 
-    setRequests((prev) =>
-      prev.filter((existingRequest) => existingRequest.requestId !== request.requestId),
-    );
+    setRequests((prev) => prev.filter((existingRequest) => existingRequest.id !== request.id));
 
-    setFriends((prev) => [...prev, request.fromUser]);
+    setFriends((prev) => [
+      ...prev,
+      {
+        username: request.fromUsername,
+        display: request.fromDisplay,
+        createdAt: new Date(),
+      },
+    ]);
     setError("");
   }
 
@@ -51,9 +56,7 @@ export default function FriendRequestPanel({
       return;
     }
 
-    setRequests((prev) =>
-      prev.filter((existingRequest) => existingRequest.requestId !== requestId),
-    );
+    setRequests((prev) => prev.filter((existingRequest) => existingRequest.id !== requestId));
 
     setError("");
   }
@@ -70,13 +73,13 @@ export default function FriendRequestPanel({
         ) : (
           <ul>
             {requests.map((request) => (
-              <li key={request.requestId} className="friendRow">
+              <li key={request.id} className="friendRow">
                 <span>
-                  {request.fromUser.display} (@{request.fromUser.username})
+                  {request.fromDisplay} (@{request.fromUsername})
                 </span>
                 <div className="friendActions">
                   <button onClick={() => void onAccept(request)}>Accept</button>
-                  <button onClick={() => void onDecline(request.requestId)}>Decline</button>
+                  <button onClick={() => void onDecline(request.id)}>Decline</button>
                 </div>
               </li>
             ))}

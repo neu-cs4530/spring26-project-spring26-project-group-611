@@ -9,6 +9,7 @@ import { type RestAPI } from "../types.ts";
 import { checkAuth } from "../services/auth.service.ts";
 import {
   acceptFriendRequest,
+  declineFriendRequest,
   getCurrentFriends,
   getIncomingFriendRequests,
   getOutgoingFriendRequests,
@@ -64,6 +65,34 @@ export const postAccept: RestAPI<{ ok: true }> = async (req, res) => {
   }
 
   const result = await acceptFriendRequest(body.data.payload.requestId, user.userId);
+  if (result && "error" in result) {
+    res.status(400).send(result);
+    return;
+  }
+
+  res.send({ ok: true });
+};
+
+/**
+ * POST /api/friend-request/decline
+ * Body: { auth: UserAuth, payload: { requestId: string } }
+ *
+ * Declines a pending friend request sent to the authenticated user.
+ */
+export const postDecline: RestAPI<{ ok: true }> = async (req, res) => {
+  const body = withAuth(zFriendRequestActionPayload).safeParse(req.body);
+  if (!body.success) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const user = await checkAuth(body.data.auth);
+  if (!user) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  const result = await declineFriendRequest(body.data.payload.requestId, user.userId);
   if (result && "error" in result) {
     res.status(400).send(result);
     return;

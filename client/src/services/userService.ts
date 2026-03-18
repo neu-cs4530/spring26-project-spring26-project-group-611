@@ -96,7 +96,9 @@ export const viewProfile = async (
  */
 export const searchUsers = async (username: string): APIResponse<SafeUserInfo[]> => {
   try {
-    const res = await api.get<SafeUserInfo[] | ErrorMsg>(`${USER_API_URL}/search?=${username}`);
+    const res = await api.get<SafeUserInfo[] | ErrorMsg>(
+      `${USER_API_URL}/search?username=${encodeURIComponent(username)}`,
+    );
     return res.data;
   } catch (error) {
     return exceptionToErrorMsg(error);
