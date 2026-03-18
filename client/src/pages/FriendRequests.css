@@ -68,3 +68,9 @@
   color: #666;
   font-size: 0.9rem;
 }
+
+.friend-requests__search {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}

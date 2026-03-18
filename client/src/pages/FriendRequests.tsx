@@ -1,4 +1,4 @@
-import type { FriendRequestInfo, SafeUserInfo } from "@gamenite/shared";
+import type { ErrorMsg, FriendRequestInfo, SafeUserInfo } from "@gamenite/shared";
 import { useEffect, useState } from "react";
 import useLoginContext from "../hooks/useLoginContext";
 import useTimeSince from "../hooks/useTimeSince";
@@ -7,8 +7,10 @@ import {
   declineFriendRequest,
   getCurrentFriends,
   getIncomingFriendRequests,
+  sendFriendRequest,
 } from "../services/friendService";
 import "./FriendRequests.css";
+import { searchUsers } from "../services/userService";
 
 export default function FriendRequests() {
   const { user, pass } = useLoginContext();
@@ -19,6 +21,12 @@ export default function FriendRequests() {
     | { type: "loaded"; requests: FriendRequestInfo[]; friends: SafeUserInfo[] }
   >({ type: "loading" });
   const [pendingRequestId, setPendingRequestId] = useState<string | null>(null);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<SafeUserInfo[]>([]);
+  const [searchError, setSearchError] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [sendingTo, setSendingTo] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,6 +57,49 @@ export default function FriendRequests() {
     };
   }, [user.username, pass]);
 
+  const handleSearch = async () => {
+    const trimmed = searchTerm.trim();
+
+    if (!trimmed) {
+      setSearchResults([]);
+      setSearchError("");
+      return;
+    }
+
+    setSearching(true);
+    setSearchError("");
+
+    const result = await searchUsers(trimmed);
+    setSearching(false);
+
+    if ("error" in result) {
+      setSearchError(result.error);
+      setSearchResults([]);
+      return;
+    }
+
+    const filteredResults: SafeUserInfo[] = result.filter(
+      (foundUser: SafeUserInfo) => foundUser.username !== user.username,
+    );
+
+    setSearchResults(filteredResults);
+  };
+
+  const handleSendFriendRequest = async (toUsername: string): Promise<void | ErrorMsg> => {
+    setSendingTo(toUsername);
+
+    const result = await sendFriendRequest({ username: user.username, password: pass }, toUsername);
+
+    setSendingTo(null);
+
+    if ("error" in result) {
+      setSearchError(result.error);
+      return result;
+    }
+
+    setSearchError("");
+    return;
+  };
   const handleAccept = async (request: FriendRequestInfo) => {
     setPendingRequestId(request.id);
     const result = await acceptFriendRequest(
@@ -107,11 +158,51 @@ export default function FriendRequests() {
   if (state.type === "loading") {
     return <div className="friend-requests">Loading friend requests...</div>;
   }
+
   if (state.type === "error") {
     return <div className="friend-requests friend-requests__error">{state.msg}</div>;
   }
+
   return (
     <div className="friend-requests">
+      <section>
+        <h2>Search Users</h2>
+        <div className="friend-requests__search">
+          <input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by username"
+          />
+          <button onClick={() => void handleSearch()} disabled={searching}>
+            {searching ? "Searching..." : "Search"}
+          </button>
+        </div>
+
+        {searchError && <p className="friend-requests__error">{searchError}</p>}
+
+        {searchResults.length > 0 && (
+          <ul className="friend-requests__list">
+            {searchResults.map((foundUser: SafeUserInfo) => (
+              <li key={foundUser.username} className="friend-requests__item">
+                <div className="friend-requests__details">
+                  <span className="friend-requests__from">{foundUser.display}</span>
+                  <span className="friend-requests__handle">@{foundUser.username}</span>
+                </div>
+                <div className="friend-requests__search">
+                  <button
+                    className="primary narrow"
+                    onClick={() => void handleSendFriendRequest(foundUser.username)}
+                    disabled={sendingTo === foundUser.username}
+                  >
+                    {sendingTo === foundUser.username ? "Sending..." : "Add Friend"}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       <section>
         <h2>Incoming Friend Requests</h2>
         {state.requests.length === 0 ? (
