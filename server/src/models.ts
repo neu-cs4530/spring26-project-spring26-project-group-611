@@ -84,6 +84,8 @@ export interface GameRecord {
   createdBy: RecordId; // References User records
   visibility?: "public" | "private";
   invitees?: RecordId[];
+  finishedAt?: DateISO;
+  winnerUserIds?: RecordId[];
 }
 
 /**

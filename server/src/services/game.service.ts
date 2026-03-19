@@ -237,6 +237,12 @@ export async function updateGame(
 
   game.state = result.state;
   game.done = game.done || result.done;
+
+  if (result.done) {
+    game.finishedAt = new Date().toISOString();
+    game.winnerUserIds = result.winnerIndexes.map((index) => game.players[index]);
+  }
+
   await GameRepo.set(gameId, game);
 
   return {
