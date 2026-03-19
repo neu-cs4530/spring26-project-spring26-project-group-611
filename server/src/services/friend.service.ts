@@ -254,3 +254,27 @@ export async function getOutgoingFriendRequests(
   }
   return results;
 }
+
+export async function cancelFriendRequest(
+  requestId: string,
+  currentUserId: string,
+): Promise<void | { error: string }> {
+  const request = await FriendRequestRepo.find(requestId);
+
+  if (!request) {
+    return { error: "Friend request not found" };
+  }
+
+  // Only sender can cancel
+  if (request.fromUser !== currentUserId) {
+    return { error: "You cannot cancel this request" };
+  }
+
+  if (request.status !== "pending") {
+    return { error: "Request already processed" };
+  }
+
+  await FriendRequestRepo.delete(requestId);
+
+  return;
+}

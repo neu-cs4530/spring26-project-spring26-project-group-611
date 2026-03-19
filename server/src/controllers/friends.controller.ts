@@ -9,6 +9,7 @@ import { type RestAPI } from "../types.ts";
 import { checkAuth } from "../services/auth.service.ts";
 import {
   acceptFriendRequest,
+  cancelFriendRequest,
   declineFriendRequest,
   getCurrentFriends,
   getIncomingFriendRequests,
@@ -172,4 +173,33 @@ export const postFriends: RestAPI<SafeUserInfo[]> = async (req, res) => {
   }
 
   res.send(friends);
+};
+
+/**
+ * POST /api/friend-request/cancel
+ * Body: { auth: UserAuth, payload: { requestId: string } }
+ *
+ * Cancels an outgoing friend request.
+ */
+export const postCancel: RestAPI<{ ok: true }> = async (req, res) => {
+  const body = withAuth(zFriendRequestActionPayload).safeParse(req.body);
+  if (!body.success) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const user = await checkAuth(body.data.auth);
+  if (!user) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  const result = await cancelFriendRequest(body.data.payload.requestId, user.userId);
+
+  if (result && "error" in result) {
+    res.status(400).send(result);
+    return;
+  }
+
+  res.send({ ok: true });
 };

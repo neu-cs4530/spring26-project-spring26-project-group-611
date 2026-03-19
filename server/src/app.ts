@@ -58,7 +58,8 @@ app.use(
         .post("/decline", friend.postDecline)
         .post("/incoming", friend.postIncoming)
         .post("/outgoing", friend.postOutgoing)
-        .post("/friends", friend.postFriends),
+        .post("/friends", friend.postFriends)
+        .post("/cancel", friend.postCancel),
     )
     .use(
       "/game-invite",

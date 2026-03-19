@@ -9,6 +9,7 @@ import {
   getIncomingFriendRequests,
   sendFriendRequest,
   getOutgoingFriendRequests,
+  cancelFriendRequest,
 } from "../services/friendService";
 import { searchUsers } from "../services/userService";
 import "./FriendRequests.css";
@@ -181,6 +182,30 @@ export default function FriendRequests() {
     });
   };
 
+  const handleCancel = async (request: FriendRequestInfo) => {
+    setPendingRequestId(request.id);
+
+    const result = await cancelFriendRequest(
+      { username: user.username, password: pass },
+      request.id,
+    );
+
+    setPendingRequestId(null);
+
+    if ("error" in result) {
+      setState({ type: "error", msg: result.error });
+      return;
+    }
+
+    setState((current) => {
+      if (current.type !== "loaded") return current;
+      return {
+        ...current,
+        outgoing: current.outgoing.filter((r) => r.id !== request.id),
+      };
+    });
+  };
+
   if (state.type === "loading") {
     return <div className="friend-requests">Loading friend requests...</div>;
   }
@@ -252,6 +277,15 @@ export default function FriendRequests() {
                   <span className="friend-requests__time">
                     request sent {timeSince(new Date(req.createdAt))}
                   </span>
+                </div>
+                <div className="friend-requests__actions">
+                  <button
+                    className="secondary narrow"
+                    onClick={() => void handleCancel(req)}
+                    disabled={pendingRequestId === req.id}
+                  >
+                    {pendingRequestId === req.id ? "Canceling..." : "Cancel"}
+                  </button>
                 </div>
               </li>
             ))}

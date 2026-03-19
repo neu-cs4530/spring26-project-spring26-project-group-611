@@ -109,3 +109,18 @@ export const declineFriendRequest = async (
     return exceptionToErrorMsg(error);
   }
 };
+
+export const cancelFriendRequest = async (
+  auth: UserAuth,
+  requestId: string,
+): APIResponse<{ ok: true }> => {
+  try {
+    const res = await api.post<{ ok: true } | ErrorMsg>(`/api/friend-request/cancel`, {
+      auth,
+      payload: { requestId },
+    });
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};
