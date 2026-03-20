@@ -53,6 +53,17 @@ export const guessLogic: GameLogic<GuessState, GuessView> = {
     }
     return ` made a guess`;
   },
+  getWinnerIndexes: ({ secret, guesses }) => {
+    if (!allGuessed(guesses)) return [];
+
+    const distances = guesses.map((guess) => Math.abs(guess - secret));
+    const bestDistance = Math.min(...distances);
+
+    return distances
+      .map((distance, index) => ({ distance, index }))
+      .filter((entry) => entry.distance === bestDistance)
+      .map((entry) => entry.index);
+  },
 };
 
 export const guessGameService = new GameService<GuessState, GuessView>(guessLogic);
