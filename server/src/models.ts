@@ -79,11 +79,10 @@ export interface GameRecord {
   done: boolean;
   chat: RecordId; // References Chat records
   players: RecordId[]; // References User records
-  invitedPlayers?: RecordId[]; // References User records invited by the host
   createdAt: DateISO;
   createdBy: RecordId; // References User records
   visibility?: "public" | "private";
-  invitees?: RecordId[];
+  invitees?: RecordId[]; // References User records invited by the host
 }
 
 /**

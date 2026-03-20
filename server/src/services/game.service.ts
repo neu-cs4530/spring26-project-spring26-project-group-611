@@ -141,12 +141,12 @@ export async function invitePlayerToGame(gameId: string, host: UserWithId, toUse
     throw new Error("You can only invite friends to a private game");
   }
 
-  const invitedPlayers = game.invitedPlayers ?? [];
-  if (invitedPlayers.includes(invitee.userId)) {
+  const invitees = game.invitees ?? [];
+  if (invitees.includes(invitee.userId)) {
     throw new Error(`user ${host.username} inviting user already invited`);
   }
 
-  game.invitedPlayers = [...invitedPlayers, invitee.userId];
+  game.invitees = [...invitees, invitee.userId];
   await GameRepo.set(gameId, game);
 
   return {
