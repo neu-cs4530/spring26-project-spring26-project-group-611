@@ -21,7 +21,7 @@
 
 .friend-requests__item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 8rem;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   column-gap: 1.5rem;
   padding: 0.75rem 0;
@@ -29,6 +29,10 @@
 }
 
 .friend-requests__details {
+  display: flex;
+  flex-wrap: warp;
+  align-items: baseline;
+  gap: 0.35rem;
   min-width: 0;
 }
 
@@ -43,6 +47,8 @@
 
 .friend-requests__actions {
   display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
   justify-content: flex-end;
 }
 

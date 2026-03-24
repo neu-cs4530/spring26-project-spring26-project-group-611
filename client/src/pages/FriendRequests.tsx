@@ -35,6 +35,10 @@ export default function FriendRequests() {
   const [searching, setSearching] = useState(false);
   const [sendingTo, setSendingTo] = useState<string | null>(null);
 
+  const sortByNewest = (requests: FriendRequestInfo[]) => [...requests].sort(
+    (a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  )
+
   useEffect(() => {
     let cancelled = false;
 
@@ -59,7 +63,7 @@ export default function FriendRequests() {
         }
         setState({
           type: "loaded",
-          requests: requestsRes,
+          requests: sortByNewest(requestsRes),
           friends: friendsRes,
           outgoing: outgoingRes,
         });
