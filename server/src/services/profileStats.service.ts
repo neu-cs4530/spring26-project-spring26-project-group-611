@@ -1,22 +1,8 @@
-import { type GameKey } from "@gamenite/shared";
+import type { GameKey, ProfilePlayedGameStat, ProfileStatsInfo } from "@gamenite/shared";
 import { GameRepo } from "../repository.ts";
 import type { GameRecord, RecordId } from "../models.ts";
 
-type PlayedGameStat = {
-  gameId: string;
-  type: GameKey;
-  playedAt: Date;
-  didWin: boolean;
-  streak: number;
-};
-
-type ProfileStats = {
-  games: PlayedGameStat[];
-  favoriteGame: GameKey | null;
-  overallWinRate: number;
-};
-
-export async function getProfileStats(userId: RecordId): Promise<ProfileStats> {
+export async function getProfileStats(userId: RecordId): Promise<ProfileStatsInfo> {
   const gameIds = await GameRepo.getAllKeys();
 
   const allGames: Array<{ gameId: string; game: GameRecord } | null> = await Promise.all(
@@ -41,7 +27,7 @@ export async function getProfileStats(userId: RecordId): Promise<ProfileStats> {
   let runningStreak = 0;
   let lastResult: boolean | null = null;
 
-  const games: PlayedGameStat[] = finishedGames.map(({ gameId, game }) => {
+  const games: ProfilePlayedGameStat[] = finishedGames.map(({ gameId, game }) => {
     const didWin = (game.winnerUserIds ?? []).includes(userId);
 
     if (lastResult === didWin) {

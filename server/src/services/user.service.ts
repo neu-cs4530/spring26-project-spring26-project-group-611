@@ -1,5 +1,6 @@
 import { type ProfileViewInfo, type SafeUserInfo, type UserUpdateRequest } from "@gamenite/shared";
 import { getUserByUsername, updateAuth } from "./auth.service.ts";
+import { getProfileStats } from "./profileStats.service.ts";
 import { UserRepo } from "../repository.ts";
 
 const disallowedUsernames = new Set(["login", "signup", "list"]);
@@ -136,12 +137,15 @@ export async function getProfileViewByUsername(
   const targetRecord = await UserRepo.get(target.userId);
   const isSelf = target.userId === viewer.userId;
   const areFriends = (targetRecord.friends ?? []).includes(viewer.userId);
+  const canViewStats = canViewerSeeStats(isSelf, areFriends, targetRecord.canViewStats);
+  const stats = canViewStats ? await getProfileStats(target.userId) : null;
 
   return {
     username: targetRecord.username,
     display: targetRecord.display,
     createdAt: isSelf || areFriends ? new Date(targetRecord.createdAt) : null,
     areFriends,
-    canViewStats: canViewerSeeStats(isSelf, areFriends, targetRecord.canViewStats),
+    canViewStats,
+    stats,
   };
 }

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { GameKey } from "./game.types.ts";
 
 /**
  * Represents a "safe" user object that excludes sensitive information like
@@ -22,6 +23,26 @@ export interface ProfileViewInfo {
   createdAt: Date | null;
   areFriends: boolean;
   canViewStats: boolean;
+  stats: ProfileStatsInfo | null;
+}
+
+/**
+ * A single finished game result shown on profile stats
+ */
+export interface ProfilePlayedGameStat {
+  gameId: string;
+  type: GameKey;
+  playedAt: Date;
+  didWin: boolean;
+  streak: number;
+}
+/**
+ * Aggregated profile stats shown based on visibility rules
+ */
+export interface ProfileStatsInfo {
+  games: ProfilePlayedGameStat[];
+  favoriteGame: GameKey | null;
+  overallWinRate: number;
 }
 
 /*** TYPES USED IN THE USER API ***/
