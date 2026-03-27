@@ -10,6 +10,7 @@ import {
   sendFriendRequest,
   getOutgoingFriendRequests,
   cancelFriendRequest,
+  removeFriend,
 } from "../services/friendService";
 import { searchUsers } from "../services/userService";
 import "./FriendRequests.css";
@@ -77,6 +78,9 @@ export default function FriendRequests() {
     };
   }, [user.username, pass]);
 
+  /**
+   * Handles searching for a friend
+   */
   const handleSearch = async () => {
     const trimmed = searchTerm.trim();
 
@@ -105,6 +109,9 @@ export default function FriendRequests() {
     setSearchResults(filteredResults);
   };
 
+  /**
+   * Handles sending a friend request
+   */
   const handleSendFriendRequest = async (toUsername: string): Promise<void | ErrorMsg> => {
     setSendingTo(toUsername);
 
@@ -129,6 +136,9 @@ export default function FriendRequests() {
     return;
   };
 
+  /**
+   * Handles accepting a friend request.
+   */
   const handleAccept = async (request: FriendRequestInfo) => {
     setPendingRequestId(request.id);
     const result = await acceptFriendRequest(
@@ -161,6 +171,9 @@ export default function FriendRequests() {
     });
   };
 
+  /**
+   * Handles declining a friend request.
+   */
   const handleDecline = async (request: FriendRequestInfo) => {
     setPendingRequestId(request.id);
     const result = await declineFriendRequest(
@@ -185,6 +198,9 @@ export default function FriendRequests() {
     });
   };
 
+  /**
+   * Handles canceling a friend request.
+   */
   const handleCancel = async (request: FriendRequestInfo) => {
     setPendingRequestId(request.id);
 
@@ -205,6 +221,27 @@ export default function FriendRequests() {
       return {
         ...current,
         outgoing: current.outgoing.filter((r) => r.id !== request.id),
+      };
+    });
+  };
+
+  /**
+   * Handles removing a friend.
+   */
+  const handleRemoveFriend = async (friendUsername: string) => {
+    const result = await removeFriend({ username: user.username, password: pass }, friendUsername);
+
+    if ("error" in result) {
+      setState({ type: "error", msg: result.error });
+      return;
+    }
+
+    setState((current) => {
+      if (current.type !== "loaded") return current;
+
+      return {
+        ...current,
+        friends: current.friends.filter((f) => f.username !== friendUsername),
       };
     });
   };
@@ -341,8 +378,19 @@ export default function FriendRequests() {
           <ul className="friend-requests__friends-list">
             {state.friends.map((friend) => (
               <li key={friend.username} className="friend-requests__friend-item">
-                <span className="friend-requests__from">{friend.display}</span>
-                <span className="friend-requests__handle">@{friend.username}</span>
+                <div className="friend-requests__details">
+                  <span className="friend-requests__from">{friend.display}</span>
+                  <span className="friend-requests__handle">@{friend.username}</span>
+                </div>
+
+                <div className="friend-requests__actions">
+                  <button
+                    className="secondary narrow"
+                    onClick={() => void handleRemoveFriend(friend.username)}
+                  >
+                    Remove
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

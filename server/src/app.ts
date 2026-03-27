@@ -60,7 +60,8 @@ app.use(
         .post("/incoming", friend.postIncoming)
         .post("/outgoing", friend.postOutgoing)
         .post("/friends", friend.postFriends)
-        .post("/cancel", friend.postCancel),
+        .post("/cancel", friend.postCancel)
+        .post("/remove", friend.postRemove),
     )
     .use(
       "/game-invite",

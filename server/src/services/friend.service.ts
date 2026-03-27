@@ -255,6 +255,12 @@ export async function getOutgoingFriendRequests(
   return results;
 }
 
+/**
+ * Cancel an outgoing freind request.
+ * @param requestId the request ID
+ * @param currentUserId the current user
+ * @returns cancels the friend request that was sent out
+ */
 export async function cancelFriendRequest(
   requestId: string,
   currentUserId: string,
@@ -275,6 +281,51 @@ export async function cancelFriendRequest(
   }
 
   await FriendRequestRepo.delete(requestId);
+
+  return;
+}
+
+/**
+ * Remove a friend once you have already added them.
+ * @param currentUserId current user
+ * @param friendUsername user of the friend that we are unadding
+ * @returns friend removed from list of friends
+ */
+export async function removeFriend(
+  currentUserId: string,
+  friendUsername: string,
+): Promise<void | { error: string }> {
+  const friend = await getUserByUsername(friendUsername);
+
+  if (!friend) {
+    return { error: "User not found" };
+  }
+
+  if (friend.userId === currentUserId) {
+    return { error: "You cannot remove yourself" };
+  }
+
+  const currentUser = await UserRepo.find(currentUserId);
+  const friendUser = await UserRepo.find(friend.userId);
+
+  if (!currentUser || !friendUser) {
+    return { error: "User not found" };
+  }
+
+  currentUser.friends = currentUser.friends ?? [];
+  friendUser.friends = friendUser.friends ?? [];
+
+  // check if actually friends
+  if (!currentUser.friends.includes(friend.userId)) {
+    return { error: "You are not friends with this user" };
+  }
+
+  currentUser.friends = currentUser.friends.filter((id) => id !== friend.userId);
+
+  friendUser.friends = friendUser.friends.filter((id) => id !== currentUserId);
+
+  await UserRepo.set(currentUserId, currentUser);
+  await UserRepo.set(friend.userId, friendUser);
 
   return;
 }

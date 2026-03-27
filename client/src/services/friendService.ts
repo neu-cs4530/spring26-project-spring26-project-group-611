@@ -95,6 +95,9 @@ export const getCurrentFriends = async (auth: UserAuth): APIResponse<SafeUserInf
   }
 };
 
+/**
+ * Decline a friend request.
+ */
 export const declineFriendRequest = async (
   auth: UserAuth,
   requestId: string,
@@ -110,6 +113,9 @@ export const declineFriendRequest = async (
   }
 };
 
+/**
+ * Cancel an outgoing friend request.
+ */
 export const cancelFriendRequest = async (
   auth: UserAuth,
   requestId: string,
@@ -118,6 +124,24 @@ export const cancelFriendRequest = async (
     const res = await api.post<{ ok: true } | ErrorMsg>(`/api/friend-request/cancel`, {
       auth,
       payload: { requestId },
+    });
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};
+
+/**
+ * Remove a friend once you already added each other.
+ */
+export const removeFriend = async (
+  auth: UserAuth,
+  friendUsername: string,
+): APIResponse<{ ok: true }> => {
+  try {
+    const res = await api.post<{ ok: true } | ErrorMsg>(`${FRIEND_REQUEST_API_URL}/remove`, {
+      auth,
+      payload: { friendUsername },
     });
     return res.data;
   } catch (error) {

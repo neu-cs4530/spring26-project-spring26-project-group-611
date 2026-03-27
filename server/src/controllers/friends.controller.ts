@@ -15,6 +15,7 @@ import {
   getIncomingFriendRequests,
   getOutgoingFriendRequests,
   sendFriendRequest,
+  removeFriend,
 } from "../services/friend.service.ts";
 import { z } from "zod";
 
@@ -195,6 +196,30 @@ export const postCancel: RestAPI<{ ok: true }> = async (req, res) => {
   }
 
   const result = await cancelFriendRequest(body.data.payload.requestId, user.userId);
+
+  if (result && "error" in result) {
+    res.status(400).send(result);
+    return;
+  }
+
+  res.send({ ok: true });
+};
+
+export const postRemove: RestAPI<{ ok: true }> = async (req, res) => {
+  const body = withAuth(z.object({ friendUsername: z.string() })).safeParse(req.body);
+
+  if (!body.success) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const user = await checkAuth(body.data.auth);
+  if (!user) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  const result = await removeFriend(user.userId, body.data.payload.friendUsername);
 
   if (result && "error" in result) {
     res.status(400).send(result);
