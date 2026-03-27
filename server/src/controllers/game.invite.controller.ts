@@ -10,6 +10,8 @@ import {
   acceptInvite,
   declineInvite,
 } from "../services/game.invite.service.ts";
+import { getGameById } from "../services/game.service.ts";
+import { emitGamePlayersUpdated } from "./game.controller.ts";
 
 /**
  * POST /api/game-invite/send
@@ -138,6 +140,12 @@ export const postAccept: RestAPI<GameInviteInfo> = async (req, res) => {
     res.status(400).send(result);
     return;
   }
+
+  const game = await getGameById(result.gameId);
+  if (game) {
+    emitGamePlayersUpdated(game.gameId, game.players);
+  }
+
   res.send(result);
 };
 

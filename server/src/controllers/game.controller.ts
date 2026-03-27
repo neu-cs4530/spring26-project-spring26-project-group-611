@@ -1,5 +1,6 @@
 import {
   type GameInfo,
+  type SafeUserInfo,
   withAuth,
   zGameInvitePayload,
   zGameCreatePayload,
@@ -31,6 +32,13 @@ let realtimeServer: GameServer | null = null;
  */
 export function setGameRealtimeServer(io: GameServer) {
   realtimeServer = io;
+}
+
+/**
+ * Emit a waiting-room player list update for a game room.
+ */
+export function emitGamePlayersUpdated(gameId: string, players: SafeUserInfo[]) {
+  realtimeServer?.to(gameId).emit("gamePlayersUpdated", players);
 }
 
 /**
@@ -135,6 +143,9 @@ export const socketWatch: SocketAPI = (socket) => async (body) => {
     const roomsToJoin = isPlayer ? [gameId, userRoom(gameId, user.userId)] : [gameId];
     await socket.join(roomsToJoin);
     socket.emit("gameWatched", { gameId, view, players });
+    // Send an immediate player snapshot to this watcher in case room broadcasts
+    // happened before this socket finished joining the game room.
+    socket.emit("gamePlayersUpdated", players);
   } catch (err) {
     logSocketError(socket, err);
   }
@@ -165,7 +176,7 @@ export const socketJoinAsPlayer: SocketAPI = (socket, io) => async (body) => {
 
     // Let everyone know the user joined (`io` instead of `socket` includes
     // the joiner)
-    io.to(gameId).emit("gamePlayersUpdated", game.players);
+    emitGamePlayersUpdated(gameId, game.players);
 
     // This socket should receive user-specific updates for this game, if it
     // isn't already
