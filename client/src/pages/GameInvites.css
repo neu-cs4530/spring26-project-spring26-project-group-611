@@ -1,0 +1,113 @@
+.game-invites {
+  padding: 1rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.game-invites__error {
+  color: #d00;
+}
+
+.game-invites__empty {
+  color: #888;
+  font-style: italic;
+}
+
+.game-invites__cards {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.game-invites__card {
+  border: 0.5px solid #d0d0d0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  background: #ffffff;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.game-invites__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.game-invites__title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #1f1f1f;
+}
+
+.game-invites__status {
+  text-transform: capitalize;
+  color: #7a7f86;
+  font-size: 0.9rem;
+}
+
+.game-invites__divider {
+  height: 1px;
+  background: #e3e5e8;
+}
+
+.game-invites__meta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  color: #2f2f2f;
+}
+
+.game-invites__fromTag {
+  background: #2f9e44;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.78rem;
+  border-radius: 6px;
+  padding: 0.16rem 0.48rem;
+}
+
+.game-invites__subtle {
+  color: #5e6772;
+  font-size: 0.9rem;
+}
+
+.game-invites__players {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.game-invites__playerRow {
+  color: #6c757d;
+  font-size: 0.92rem;
+}
+
+.game-invites__actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.game-invites__accept {
+  background: #4a6741;
+  color: #ffffff;
+  border: 1px solid #4a6741;
+}
+
+.game-invites__accept:hover {
+  background: #3f5838;
+}
+
+.game-invites__decline {
+  background: transparent;
+  color: #4d5561;
+  border: 1px solid #cccccc;
+}
+
+.game-invites__decline:hover {
+  background: #f4f6f8;
+}

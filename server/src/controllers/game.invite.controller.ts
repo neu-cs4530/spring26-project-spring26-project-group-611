@@ -7,6 +7,8 @@ import {
   getInvitesSentByUser,
   sendGameInvite,
   toggleAcceptGameInvites,
+  acceptInvite,
+  declineInvite,
 } from "../services/game.invite.service.ts";
 
 /**
@@ -110,4 +112,58 @@ export const postToggleAccept: RestAPI<{ acceptGameInvites: boolean }> = async (
     return;
   }
   res.status(201).send(result);
+};
+
+/**
+ * POST /api/game-invite/accept
+ * Body: { auth: UserAuth, payload: { inviteId: string } }
+ *
+ * Allows the authenticated user to accept a game invite
+ */
+export const postAccept: RestAPI<GameInviteInfo> = async (req, res) => {
+  const body = withAuth(z.object({ inviteId: z.string() })).safeParse(req.body);
+  if (!body.success) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const user = await checkAuth(body.data.auth);
+  if (!user) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  const result = await acceptInvite(user.userId, body.data.payload.inviteId);
+  if ("error" in result) {
+    res.status(400).send(result);
+    return;
+  }
+  res.send(result);
+};
+
+/**
+ * POST /api/game-invite/decline
+ * Body: { auth: UserAuth, payload: { inviteId: string } }
+ *
+ * Allows the authenticated user to decline a game invite
+ */
+export const postDecline: RestAPI<GameInviteInfo> = async (req, res) => {
+  const body = withAuth(z.object({ inviteId: z.string() })).safeParse(req.body);
+  if (!body.success) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const user = await checkAuth(body.data.auth);
+  if (!user) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  const result = await declineInvite(user.userId, body.data.payload.inviteId);
+  if ("error" in result) {
+    res.status(400).send(result);
+    return;
+  }
+  res.send(result);
 };

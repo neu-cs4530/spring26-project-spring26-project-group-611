@@ -1,6 +1,7 @@
 import { type GameInviteInfo } from "@gamenite/shared";
 import { GameInviteRepo, GameRepo, UserRepo } from "../repository.ts";
 import { getUserByUsername } from "./auth.service.ts";
+import { joinGame } from "./game.service.ts";
 
 /**
  * Convert a stored GameInviteRecord +id into a client-safe GameInviteInfo.
@@ -63,6 +64,14 @@ export async function sendGameInvite(
     return { error: "Cannot invite yourself to your own game" };
   }
 
+  const hostUserRecord = await UserRepo.find(hostUserId);
+  if (!hostUserRecord) {
+    return { error: "Host user not found" };
+  }
+  if (!hostUserRecord.friends.includes(toUser.userId)) {
+    return { error: "You can only invite friends to a private game" };
+  }
+
   const toUserRecord = await UserRepo.find(toUser.userId);
   if (!toUserRecord) {
     return { error: "Player not found" };
@@ -72,6 +81,11 @@ export async function sendGameInvite(
   }
   if (game.players.includes(toUser.userId)) {
     return { error: "Player is already in the game" };
+  }
+
+  const invitees = game.invitees ?? [];
+  if (invitees.includes(toUser.userId)) {
+    return { error: "An invite has already been sent to this player for this game" };
   }
   // check for an existing pending invite
   const allKeys = await GameInviteRepo.getAllKeys();
@@ -94,6 +108,9 @@ export async function sendGameInvite(
     status: "pending",
     createdAt: new Date().toISOString(),
   });
+
+  game.invitees = [...invitees, toUser.userId];
+  await GameRepo.set(gameId, game);
 
   return toGameInviteInfo(inviteId, await GameInviteRepo.get(inviteId));
 }
@@ -150,4 +167,78 @@ export async function toggleAcceptGameInvites(
   user.acceptGameInvites = !user.acceptGameInvites;
   await UserRepo.set(userId, user);
   return { acceptGameInvites: user.acceptGameInvites };
+}
+
+/**
+ * Accept a game invite by updating its status
+ *
+ * @param userId - The user ID of the invitee
+ * @param inviteId - The invite ID to accept
+ * @returns the updated GameInviteInfo, or an error object
+ */
+export async function acceptInvite(
+  userId: string,
+  inviteId: string,
+): Promise<GameInviteInfo | { error: string }> {
+  const invite = await GameInviteRepo.find(inviteId);
+  if (!invite) {
+    return { error: "Invite not found" };
+  }
+  if (invite.toUser !== userId) {
+    return { error: "You cannot accept this invite" };
+  }
+  if (invite.status !== "pending") {
+    return { error: "This invite is no longer pending" };
+  }
+
+  const game = await GameRepo.find(invite.gameId);
+  if (!game) {
+    return { error: "Game not found" };
+  }
+
+  const alreadyInGame = game.players.includes(userId);
+  if (!alreadyInGame) {
+    const user = await UserRepo.find(userId);
+    if (!user) {
+      return { error: "User not found" };
+    }
+    try {
+      await joinGame(invite.gameId, { userId, username: user.username });
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "Could not join game" };
+    }
+  }
+
+  invite.status = "accepted";
+  await GameInviteRepo.set(inviteId, invite);
+
+  return toGameInviteInfo(inviteId, invite);
+}
+
+/**
+ * Decline a game invite by updating its status
+ *
+ * @param userId - The user ID of the invitee
+ * @param inviteId - The invite ID to decline
+ * @returns the updated GameInviteInfo, or an error object
+ */
+export async function declineInvite(
+  userId: string,
+  inviteId: string,
+): Promise<GameInviteInfo | { error: string }> {
+  const invite = await GameInviteRepo.find(inviteId);
+  if (!invite) {
+    return { error: "Invite not found" };
+  }
+  if (invite.toUser !== userId) {
+    return { error: "You cannot decline this invite" };
+  }
+  if (invite.status !== "pending") {
+    return { error: "This invite is no longer pending" };
+  }
+
+  invite.status = "declined";
+  await GameInviteRepo.set(inviteId, invite);
+
+  return toGameInviteInfo(inviteId, invite);
 }

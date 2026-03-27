@@ -1,7 +1,8 @@
 import "./SideBarNav.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, type NavLinkRenderProps } from "react-router-dom";
 import useAuth from "../hooks/useAuth.ts";
+import { getIncomingGameInvites } from "../services/gameInviteService.ts";
 
 /**
  * The SideBarNav component contains the primary naviagation menu. It
@@ -10,7 +11,9 @@ import useAuth from "../hooks/useAuth.ts";
  */
 export default function SideBarNav() {
   const [showOptions, setShowOptions] = useState<boolean>(false);
-  const { username } = useAuth();
+  const auth = useAuth();
+  const { username } = auth;
+  const [pendingInvites, setPendingInvites] = useState<number>(0);
 
   const toggleOptions = () => {
     setShowOptions(!showOptions);
@@ -19,6 +22,30 @@ export default function SideBarNav() {
   const navClass = ({ isActive }: NavLinkRenderProps) =>
     `menu_button ${isActive ? "menu_selected" : ""}`;
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function refreshInvites() {
+      const result = await getIncomingGameInvites(auth);
+      if (cancelled) return;
+      if ("error" in result) {
+        setPendingInvites(0);
+        return;
+      }
+      setPendingInvites(result.length);
+    }
+
+    void refreshInvites();
+    const intervalId = window.setInterval(() => {
+      void refreshInvites();
+    }, 3000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [auth]);
+
   return (
     <div className="sideBarNav">
       <NavLink to="/" className={navClass}>
@@ -26,6 +53,10 @@ export default function SideBarNav() {
       </NavLink>
       <NavLink to="/games" className={navClass}>
         Games
+      </NavLink>
+      <NavLink to="/games/invites" className={navClass}>
+        Game Invites
+        {pendingInvites > 0 && <span className="menu_badge">{pendingInvites}</span>}
       </NavLink>
       <NavLink to="/forum" className={navClass}>
         Forum
