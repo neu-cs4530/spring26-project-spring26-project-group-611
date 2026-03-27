@@ -242,3 +242,26 @@ export async function declineInvite(
 
   return toGameInviteInfo(inviteId, invite);
 }
+
+/**
+ * Mark any pending invite(s) for a user+game as accepted.
+ *
+ * This is used when a user joins a game through paths other than the
+ * Game Invites page so invite state stays in sync.
+ *
+ * @param userId - The user ID of the invitee
+ * @param gameId - The game that was joined
+ */
+export async function acceptPendingInvitesForGame(userId: string, gameId: string): Promise<void> {
+  const allKeys = await GameInviteRepo.getAllKeys();
+  for (const key of allKeys) {
+    const invite = await GameInviteRepo.find(key);
+    if (!invite) continue;
+    if (invite.toUser !== userId) continue;
+    if (invite.gameId !== gameId) continue;
+    if (invite.status !== "pending") continue;
+
+    invite.status = "accepted";
+    await GameInviteRepo.set(key, invite);
+  }
+}
