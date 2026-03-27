@@ -58,13 +58,10 @@ export const inviteToGame = async (
   payload: { gameId: string; toUsername: string },
 ): APIResponse<GameInviteInfo> => {
   try {
-    const res = await api.post<GameInviteInfo | ErrorMsg>(
-      `/api/game-invite/send`,
-      {
-        auth,
-        payload,
-      },
-    );
+    const res = await api.post<GameInviteInfo | ErrorMsg>(`/api/game-invite/send`, {
+      auth,
+      payload,
+    });
     return res.data;
   } catch (error) {
     return exceptionToErrorMsg(error);

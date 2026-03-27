@@ -23,6 +23,16 @@ import { logSocketError } from "./socket.controller.ts";
 import { checkAuth, enforceAuth } from "../services/auth.service.ts";
 import { acceptPendingInvitesForGame } from "../services/game.invite.service.ts";
 
+let realtimeServer: GameServer | null = null;
+
+/**
+ * Registers the socket server so REST handlers can emit game-level realtime
+ * events (e.g., a newly created game).
+ */
+export function setGameRealtimeServer(io: GameServer) {
+  realtimeServer = io;
+}
+
 /**
  * Handle POST requests to `/api/game/create` by creating a game. The game
  * starts with one player, the user who made the POST request.
@@ -43,6 +53,7 @@ export const postCreate: RestAPI<GameInfo> = async (req, res) => {
   const { type, visibility } = body.data.payload;
 
   const game = await createGame(user, type, new Date(), visibility);
+  realtimeServer?.emit("gameCreated", game);
   res.send(game);
 };
 

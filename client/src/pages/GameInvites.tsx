@@ -2,7 +2,11 @@ import type { GameInviteInfo } from "@gamenite/shared";
 import { useEffect, useState } from "react";
 import { gameNames } from "../util/consts.ts";
 import useTimeSince from "../hooks/useTimeSince.ts";
-import { acceptGameInvite, declineGameInvite, getIncomingGameInvites } from "../services/gameInviteService.ts";
+import {
+  acceptGameInvite,
+  declineGameInvite,
+  getIncomingGameInvites,
+} from "../services/gameInviteService.ts";
 import { getGameById } from "../services/gameService.ts";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth.ts";
@@ -18,16 +22,14 @@ export default function GameInvites() {
     | {
         type: "loaded";
         invites: (GameInviteInfo & {
-          game:
-            | {
-                gameId: string;
-                type: "nim" | "guess";
-                status: "waiting" | "active" | "done";
-                createdAt: Date;
-                createdBy: { username: string; display: string; createdAt: Date };
-                players: { username: string; display: string; createdAt: Date }[];
-              }
-            | null;
+          game: {
+            gameId: string;
+            type: "nim" | "guess";
+            status: "waiting" | "active" | "done";
+            createdAt: Date;
+            createdBy: { username: string; display: string; createdAt: Date };
+            players: { username: string; display: string; createdAt: Date }[];
+          } | null;
         })[];
       }
   >({ type: "loading" });
@@ -71,6 +73,13 @@ export default function GameInvites() {
   function formatStatus(status: "waiting" | "active" | "done" | undefined) {
     if (!status) return "Unknown";
     return status[0].toUpperCase() + status.slice(1);
+  }
+
+  function inviterName(
+    invite: GameInviteInfo & { game: { createdBy: { display: string } } | null },
+  ) {
+    const display = invite.game?.createdBy.display?.trim();
+    return display ? display : invite.fromUsername;
   }
 
   const handleAccept = async (invite: GameInviteInfo) => {
@@ -145,14 +154,15 @@ export default function GameInvites() {
                 <div className="game-invites__meta">
                   <span className="game-invites__fromTag">invited!</span>
                   <span>
-                    <strong>{invite.fromUsername}</strong> invited you {timeSince(new Date(invite.createdAt))}
+                    <strong>{inviterName(invite)}</strong> invited you{" "}
+                    {timeSince(new Date(invite.createdAt))}
                   </span>
                 </div>
 
                 {invite.game ? (
                   <>
                     <div className="game-invites__subtle">
-                      Created by {invite.game.createdBy.display} • {invite.game.players.length} player
+                      Created by {inviterName(invite)} • {invite.game.players.length} player
                       {invite.game.players.length === 1 ? "" : "s"}
                     </div>
                     <div className="game-invites__players">

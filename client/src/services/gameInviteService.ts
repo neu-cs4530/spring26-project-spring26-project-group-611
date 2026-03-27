@@ -27,13 +27,10 @@ export const acceptGameInvite = async (
   inviteId: string,
 ): APIResponse<GameInviteInfo> => {
   try {
-    const res = await api.post<GameInviteInfo | ErrorMsg>(
-      `${GAME_INVITE_API_URL}/accept`,
-      {
-        auth,
-        payload: { inviteId },
-      },
-    );
+    const res = await api.post<GameInviteInfo | ErrorMsg>(`${GAME_INVITE_API_URL}/accept`, {
+      auth,
+      payload: { inviteId },
+    });
     return res.data;
   } catch (error) {
     return exceptionToErrorMsg(error);
@@ -48,13 +45,10 @@ export const declineGameInvite = async (
   inviteId: string,
 ): APIResponse<GameInviteInfo> => {
   try {
-    const res = await api.post<GameInviteInfo | ErrorMsg>(
-      `${GAME_INVITE_API_URL}/decline`,
-      {
-        auth,
-        payload: { inviteId },
-      },
-    );
+    const res = await api.post<GameInviteInfo | ErrorMsg>(`${GAME_INVITE_API_URL}/decline`, {
+      auth,
+      payload: { inviteId },
+    });
     return res.data;
   } catch (error) {
     return exceptionToErrorMsg(error);
