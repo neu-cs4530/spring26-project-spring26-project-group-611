@@ -11,6 +11,10 @@ export default function GuessGame({
   const [guess, setGuess] = useState(16);
   const playerHasGuessed = view.finished || view.guesses[userPlayerIndex] !== false;
 
+  function displayNameForPlayer(index: number) {
+    return players[index]?.display ?? `Player #${index + 1}`;
+  }
+
   /** Checks if a best is the best guess */
   function isBestGuess(index: number) {
     if (!view.finished) return false;
@@ -30,12 +34,12 @@ export default function GuessGame({
       return view.myGuess ? `You guessed ${view.myGuess}` : "You haven't guessed yet";
     }
     if (guess === false) {
-      return `${players[index].display} hasn't guessed yet`;
+      return `${displayNameForPlayer(index)} hasn't guessed yet`;
     }
     if (guess === true) {
-      return `${players[index].display} has guessed`;
+      return `${displayNameForPlayer(index)} has guessed`;
     }
-    return `${players[index].display} guessed ${guess}`;
+    return `${displayNameForPlayer(index)} guessed ${guess}`;
   }
 
   return (

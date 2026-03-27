@@ -75,6 +75,13 @@ export default function GameInvites() {
     return status[0].toUpperCase() + status.slice(1);
   }
 
+  function inviterName(
+    invite: GameInviteInfo & { game: { createdBy: { display: string } } | null },
+  ) {
+    const display = invite.game?.createdBy.display?.trim();
+    return display ? display : invite.fromUsername;
+  }
+
   const handleAccept = async (invite: GameInviteInfo) => {
     setPendingInviteId(invite.inviteId);
     const result = await acceptGameInvite(auth, invite.inviteId);
@@ -147,7 +154,7 @@ export default function GameInvites() {
                 <div className="game-invites__meta">
                   <span className="game-invites__fromTag">invited!</span>
                   <span>
-                    <strong>{invite.fromUsername}</strong> invited you{" "}
+                    <strong>{inviterName(invite)}</strong> invited you{" "}
                     {timeSince(new Date(invite.createdAt))}
                   </span>
                 </div>
@@ -155,8 +162,7 @@ export default function GameInvites() {
                 {invite.game ? (
                   <>
                     <div className="game-invites__subtle">
-                      Created by {invite.game.createdBy.display} • {invite.game.players.length}{" "}
-                      player
+                      Created by {inviterName(invite)} • {invite.game.players.length} player
                       {invite.game.players.length === 1 ? "" : "s"}
                     </div>
                     <div className="game-invites__players">
