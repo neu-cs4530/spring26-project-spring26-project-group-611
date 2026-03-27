@@ -21,6 +21,7 @@ import { addMoveLogToChat } from "../services/chat.service.ts";
 import { z } from "zod";
 import { logSocketError } from "./socket.controller.ts";
 import { checkAuth, enforceAuth } from "../services/auth.service.ts";
+import { acceptPendingInvitesForGame } from "../services/game.invite.service.ts";
 
 /**
  * Handle POST requests to `/api/game/create` by creating a game. The game
@@ -146,6 +147,10 @@ export const socketJoinAsPlayer: SocketAPI = (socket, io) => async (body) => {
     const { auth, payload: gameId } = withAuth(z.string()).parse(body);
     const user = await enforceAuth(auth);
     const game = await joinGame(gameId, user);
+
+    // If this player had a pending invite for this game, mark it accepted
+    // even when they joined via the Games/Game page flow.
+    await acceptPendingInvitesForGame(user.userId, gameId);
 
     // Let everyone know the user joined (`io` instead of `socket` includes
     // the joiner)
