@@ -19,6 +19,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import fallback from "./fallback.tsx";
 import NewThread from "./pages/NewThread.tsx";
 import FriendRequests from "./pages/FriendRequests.tsx";
+import GameInvites from "./pages/GameInvites.tsx";
 import TimeContextKeeper from "./components/UpdatingTimeContext.tsx";
 
 /** If `true`, all incoming socket messages will be logged */
@@ -67,6 +68,7 @@ export default function App() {
             <Route path="/forum/post/new" element={<NewThread />} />
             <Route path="/forum/post/:threadId" element={<ThreadPage />} />
             <Route path="/games" element={<GameList />} />
+            <Route path="/games/invites" element={<GameInvites />} />
             <Route path="/game/new" element={<NewGame />} />
             <Route path="/game/:gameId" element={<Game />} />
             <Route path="/profile/:username" element={<Profile />} />

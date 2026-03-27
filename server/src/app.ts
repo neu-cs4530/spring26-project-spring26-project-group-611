@@ -67,6 +67,8 @@ app.use(
         .post("/send", gameInvite.postSend)
         .post("/incoming", gameInvite.postIncoming)
         .post("/outgoing", gameInvite.postOutgoing)
+        .post("/accept", gameInvite.postAccept)
+        .post("/decline", gameInvite.postDecline)
         .post("/toggle-accept", gameInvite.postToggleAccept),
     ),
 );

@@ -1,4 +1,4 @@
-import type { ErrorMsg, GameInfo, GameKey, UserAuth } from "@gamenite/shared";
+import type { ErrorMsg, GameInfo, GameInviteInfo, GameKey, UserAuth } from "@gamenite/shared";
 import { api, exceptionToErrorMsg } from "./api.ts";
 import type { APIResponse } from "../util/types.ts";
 
@@ -56,10 +56,10 @@ export const gameList = async (): APIResponse<GameInfo[]> => {
 export const inviteToGame = async (
   auth: UserAuth,
   payload: { gameId: string; toUsername: string },
-): APIResponse<{ gameId: string; toUsername: string }> => {
+): APIResponse<GameInviteInfo> => {
   try {
-    const res = await api.post<{ gameId: string; toUsername: string } | ErrorMsg>(
-      `${GAME_API_URL}/invite`,
+    const res = await api.post<GameInviteInfo | ErrorMsg>(
+      `/api/game-invite/send`,
       {
         auth,
         payload,

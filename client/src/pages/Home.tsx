@@ -1,12 +1,12 @@
 import useThreadList from "../hooks/useThreadList.ts";
 import ThreadSummaryView from "../components/ThreadSummaryView.tsx";
 import { useNavigate } from "react-router-dom";
-import useGameList from "../hooks/useGameList.ts";
+import useGameListWithInvites from "../hooks/useGameListWithInvites.ts";
 import GameSummaryView from "../components/GameSummaryView.tsx";
 
 export default function Home() {
   const threadList = useThreadList(4);
-  const gameList = useGameList(4);
+  const gameList = useGameListWithInvites(4);
   const navigate = useNavigate();
 
   return (

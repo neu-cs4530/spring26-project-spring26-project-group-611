@@ -1,9 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import GameSummaryView from "../components/GameSummaryView.tsx";
-import useGameList from "../hooks/useGameList.ts";
+import useGameListWithInvites from "../hooks/useGameListWithInvites.ts";
 
 export default function GameList() {
-  const gameList = useGameList();
+  const gameList = useGameListWithInvites();
   const navigate = useNavigate();
 
   return (

@@ -15,7 +15,8 @@ export default function GameSummaryView({
   players,
   createdAt,
   createdBy,
-}: GameInfo) {
+  inviteStatus,
+}: GameInfo & { inviteStatus?: "invited" }) {
   const timeSince = useTimeSince();
   const navigate = useNavigate();
   const numPlayers = players.length;
@@ -29,6 +30,7 @@ export default function GameSummaryView({
         A game of {gameNames[type]}
       </NavLink>
       <div className="lastActivity">
+        {inviteStatus === "invited" && <span className="gameSummary__invited-badge">invited</span>}
         <UserLink user={createdBy} capitalize /> created {timeSince(createdAt)}
       </div>
     </div>
