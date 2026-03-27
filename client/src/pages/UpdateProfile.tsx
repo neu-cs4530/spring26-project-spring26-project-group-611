@@ -1,12 +1,21 @@
-import { useState } from "react";
+import type { ProfileViewInfo } from "@gamenite/shared";
+import { useEffect, useState } from "react";
 import useLoginContext from "../hooks/useLoginContext";
 import useTimeSince from "../hooks/useTimeSince";
 import useEditProfileForm from "../hooks/useEditProfileForm";
+import { viewProfile } from "../services/userService";
+import { gameNames } from "../util/consts";
+import "./ViewProfile.css";
 
 export default function UpdateProfile() {
-  const { user } = useLoginContext();
+  const { user, pass } = useLoginContext();
   const timeSince = useTimeSince();
   const [showPass, setShowPass] = useState(false);
+  const [statsState, setStatsState] = useState<
+    | { type: "loading" }
+    | { type: "error"; msg: string }
+    | { type: "loaded"; profile: ProfileViewInfo }
+  >({ type: "loading" });
   const {
     display,
     setDisplay,
@@ -20,6 +29,85 @@ export default function UpdateProfile() {
     handleSubmit,
   } = useEditProfileForm();
 
+  useEffect(() => {
+    let canceled = false;
+    viewProfile({ username: user.username, password: pass }, user.username)
+      .then((response) => {
+        if (canceled) return;
+        if ("error" in response) {
+          setStatsState({ type: "error", msg: response.error });
+          return;
+        }
+        setStatsState({ type: "loaded", profile: response });
+      })
+      .catch((err) => {
+        if (canceled) return;
+        setStatsState({ type: "error", msg: `${err}` });
+      });
+    return () => {
+      canceled = true;
+    };
+  }, [user.username, pass]);
+
+  const renderSelfStats = () => {
+    if (statsState.type === "loading") {
+      return <div className="smallAndGray">Loading stats...</div>;
+    }
+    if (statsState.type === "error") {
+      return <div className="error-message">{statsState.msg}</div>;
+    }
+    const { profile } = statsState;
+    if (!profile.stats) {
+      return <div className="smallAndGray">No stats available yet.</div>;
+    }
+    const winRatePercent = `${Math.round(profile.stats.overallWinRate * 100)}%`;
+
+    return (
+      <div className="view-profile__stats spacedSection">
+        <div className="view-profile__stats-summary">
+          <div>
+            <strong>Overall win rate:</strong>
+            {winRatePercent}
+          </div>
+          <div>
+            <strong>Favorite game:</strong>{" "}
+            {profile.stats.favoriteGame
+              ? gameNames[profile.stats.favoriteGame]
+              : "No games played yet"}
+          </div>
+        </div>
+
+        <h3>Recent games</h3>
+        {profile.stats.games.length === 0 ? (
+          <div className="smallAndGray">No finished games yet.</div>
+        ) : (
+          <ul className="view-profile__stats-list">
+            {profile.stats.games.map((game) => (
+              <li key={game.gameId} className="view-profile__stats-item">
+                <div className="view-profile__stats-main">
+                  <span className="view-profile__game-name">{gameNames[game.type]}</span>
+                  <span className="smallAndGray">played {timeSince(game.playedAt)}</span>
+                </div>
+                <div className="view-profile_stats-meta">
+                  <span
+                    className={
+                      game.didWin ? "view-profile__result-win" : "view-profile__result-loss"
+                    }
+                  >
+                    {game.didWin ? "win " : "loss "}
+                  </span>
+                  <span className="smallAndGray">
+                    {game.didWin ? "win " : "loss "} streak: {game.streak}{" "}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  };
+
   return (
     <form className="content spacedSection" onSubmit={handleSubmit}>
       <h2>Profile</h2>
@@ -31,6 +119,13 @@ export default function UpdateProfile() {
         </ul>
       </div>
       <hr />
+
+      <div className="spacedSection">
+        <h3>Game stats</h3>
+        {renderSelfStats()}
+      </div>
+      <hr />
+
       <div className="spacedSection">
         <h3>Display name</h3>
         <div style={{ display: "flex", flexDirection: "row", gap: "0.5rem" }}>
