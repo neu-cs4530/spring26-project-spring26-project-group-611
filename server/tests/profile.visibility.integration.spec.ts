@@ -111,7 +111,9 @@ async function safeDeleteFixtureChats(chatIds: string[]) {
   }
 }
 
-function expectedRunningStreaks(games: Array<{ gameId: string; didWin: boolean }>): Map<string, number> {
+function expectedRunningStreaks(
+  games: Array<{ gameId: string; didWin: boolean }>,
+): Map<string, number> {
   const expected = new Map<string, number>();
 
   let streak = 0;
