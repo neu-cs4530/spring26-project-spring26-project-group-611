@@ -327,5 +327,21 @@ export async function removeFriend(
   await UserRepo.set(currentUserId, currentUser);
   await UserRepo.set(friend.userId, friendUser);
 
+  const keys = await FriendRequestRepo.getAllKeys();
+
+  // makes sure that they are no longer considered friends so they can be added back later on
+  for (const key of keys) {
+    const rec = await FriendRequestRepo.find(key);
+    if (!rec) continue;
+
+    const isBetweenUsers =
+      (rec.fromUser === currentUserId && rec.toUser === friend.userId) ||
+      (rec.fromUser === friend.userId && rec.toUser === currentUserId);
+
+    if (isBetweenUsers && rec.status === "accepted") {
+      await FriendRequestRepo.delete(key);
+    }
+  }
+
   return;
 }
