@@ -10,7 +10,7 @@
   margin: 0;
 }
 
-@media (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motiowhern: no-preference) {
   html {
     interpolate-size: allow-keywords;
   }
