@@ -75,6 +75,7 @@ app.use(
         .post("/toggle-accept", gameInvite.postToggleAccept),
     )
     .use(
+      "/dm",
       Router()
         .post("/start", dm.postStart)
         .post("/send", dm.postSend)
@@ -98,6 +99,9 @@ io.on("connection", (socket) => {
   socket.on("gameMakeMove", game.socketMakeMove(socket, io));
   socket.on("gameStart", game.socketStart(socket, io));
   socket.on("gameWatch", game.socketWatch(socket, io));
+  socket.on("dmJoin", dm.socketJoin(socket, io));
+  socket.on("dmLeave", dm.socketLeave(socket, io));
+  socket.on("dmSendMessage", dm.socketSendMessage(socket, io));
 
   socket.onAny((name, payload) => {
     const zPayload = z.object({ auth: z.object({ username: z.string() }), payload: z.any() });

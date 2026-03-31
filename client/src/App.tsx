@@ -21,6 +21,7 @@ import NewThread from "./pages/NewThread.tsx";
 import FriendRequests from "./pages/FriendRequests.tsx";
 import GameInvites from "./pages/GameInvites.tsx";
 import TimeContextKeeper from "./components/UpdatingTimeContext.tsx";
+import DM from "./pages/DM.tsx";
 
 /** If `true`, all incoming socket messages will be logged */
 const DEBUG_SOCKETS = false;
@@ -74,6 +75,7 @@ export default function App() {
             <Route path="/profile/:username" element={<Profile />} />
             <Route path="/friends/requests" element={<FriendRequests />} />
             <Route path="/*" element={<NoSuchRoute />} />
+            <Route path="/dm/:username" element={<DM />} />
           </Route>
         </Routes>
       </BrowserRouter>

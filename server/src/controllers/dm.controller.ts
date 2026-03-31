@@ -1,8 +1,9 @@
 import { withAuth, type SafeUserInfo } from "@gamenite/shared";
 import { z } from "zod";
-import { type RestAPI } from "../types.ts";
-import { checkAuth } from "../services/auth.service.ts";
+import { type RestAPI, type SocketAPI } from "../types.ts";
+import { checkAuth, enforceAuth } from "../services/auth.service.ts";
 import { getOrCreateConversation, sendDirectMessage, getMessages } from "../services/dm.service.ts";
+import { logSocketError } from "./socket.controller.ts";
 
 type DmStartResponse = { id: string };
 
@@ -93,4 +94,70 @@ export const postMessages: RestAPI<DmMessagesResponse> = async (req, res) => {
   }
 
   res.send(result);
+};
+
+const zDmConversationPayload = z.object({
+  conversationId: z.string(),
+});
+
+const zDmSendPayload = z.object({
+  conversationId: z.string(),
+  text: z.string(),
+});
+
+export const socketJoin: SocketAPI = (socket) => async (body) => {
+  try {
+    const {
+      auth,
+      payload: { conversationId },
+    } = withAuth(zDmConversationPayload).parse(body);
+
+    const user = await enforceAuth(auth);
+
+    const messages = await getMessages(user.username, conversationId);
+
+    if ("error" in messages) {
+      throw new Error(messages.error);
+    }
+
+    await socket.join(conversationId);
+    socket.emit("dmJoined", { conversationId, messages });
+  } catch (err) {
+    logSocketError(socket, err);
+  }
+};
+
+export const socketLeave: SocketAPI = (socket) => async (body) => {
+  try {
+    const {
+      auth,
+      payload: { conversationId },
+    } = withAuth(zDmConversationPayload).parse(body);
+
+    await enforceAuth(auth);
+    await socket.leave(conversationId);
+  } catch (err) {
+    logSocketError(socket, err);
+  }
+};
+
+export const socketSendMessage: SocketAPI = (socket, io) => async (body) => {
+  try {
+    const {
+      auth,
+      payload: { conversationId, text },
+    } = withAuth(zDmSendPayload).parse(body);
+
+    const user = await enforceAuth(auth);
+
+    const message = await sendDirectMessage(user.username, conversationId, text);
+
+    if ("error" in message) {
+      throw new Error(message.error);
+    }
+
+    io.to(conversationId).emit("dmNewMessage", { conversationId, message });
+  } catch (err) {
+    logSocketError(socket, err);
+  }
 };

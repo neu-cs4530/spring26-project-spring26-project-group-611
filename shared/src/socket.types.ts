@@ -26,6 +26,9 @@ export interface ClientToServerEvents {
   gameMakeMove: (payload: WithAuth<GameMakeMovePayload>) => void;
   gameStart: (payload: WithAuth<string>) => void;
   gameWatch: (payload: WithAuth<string>) => void;
+  dmJoin: (payload: WithAuth<{ conversationId: string }>) => void;
+  dmLeave: (payload: WithAuth<{ conversationId: string }>) => void;
+  dmSendMessage: (payload: WithAuth<{ conversationId: string; text: string }>) => void;
 }
 
 /**
@@ -41,4 +44,23 @@ export interface ServerToClientEvents {
   gameCreated: (payload: GameInfo) => void;
   gameStateUpdated: (payload: TaggedGameView & { forPlayer: boolean }) => void;
   gameWatched: (payload: GamePlayInfo) => void;
+  dmJoined: (payload: {
+    conversationId: string;
+    messages: {
+      id: string;
+      text: string;
+      sender: SafeUserInfo;
+      createdAt: Date;
+    }[];
+  }) => void;
+
+  dmNewMessage: (payload: {
+    conversationId: string;
+    message: {
+      id: string;
+      text: string;
+      sender: SafeUserInfo;
+      createdAt: Date;
+    };
+  }) => void;
 }

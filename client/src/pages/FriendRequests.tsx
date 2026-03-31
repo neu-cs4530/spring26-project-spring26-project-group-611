@@ -1,5 +1,6 @@
 import type { ErrorMsg, FriendRequestInfo, SafeUserInfo } from "@gamenite/shared";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import useLoginContext from "../hooks/useLoginContext";
 import useTimeSince from "../hooks/useTimeSince";
 import {
@@ -17,6 +18,7 @@ import "./FriendRequests.css";
 
 export default function FriendRequests() {
   const { user, pass } = useLoginContext();
+  const navigate = useNavigate();
   const timeSince = useTimeSince();
   const [state, setState] = useState<
     | { type: "loading" }
@@ -78,9 +80,6 @@ export default function FriendRequests() {
     };
   }, [user.username, pass]);
 
-  /**
-   * Handles searching for a friend
-   */
   const handleSearch = async () => {
     const trimmed = searchTerm.trim();
 
@@ -109,9 +108,6 @@ export default function FriendRequests() {
     setSearchResults(filteredResults);
   };
 
-  /**
-   * Handles sending a friend request
-   */
   const handleSendFriendRequest = async (toUsername: string): Promise<void | ErrorMsg> => {
     setSendingTo(toUsername);
 
@@ -136,9 +132,6 @@ export default function FriendRequests() {
     return;
   };
 
-  /**
-   * Handles accepting a friend request.
-   */
   const handleAccept = async (request: FriendRequestInfo) => {
     setPendingRequestId(request.id);
     const result = await acceptFriendRequest(
@@ -171,9 +164,6 @@ export default function FriendRequests() {
     });
   };
 
-  /**
-   * Handles declining a friend request.
-   */
   const handleDecline = async (request: FriendRequestInfo) => {
     setPendingRequestId(request.id);
     const result = await declineFriendRequest(
@@ -198,9 +188,6 @@ export default function FriendRequests() {
     });
   };
 
-  /**
-   * Handles canceling a friend request.
-   */
   const handleCancel = async (request: FriendRequestInfo) => {
     setPendingRequestId(request.id);
 
@@ -225,9 +212,6 @@ export default function FriendRequests() {
     });
   };
 
-  /**
-   * Handles removing a friend.
-   */
   const handleRemoveFriend = async (friendUsername: string) => {
     const result = await removeFriend({ username: user.username, password: pass }, friendUsername);
 
@@ -384,6 +368,12 @@ export default function FriendRequests() {
                 </div>
 
                 <div className="friend-requests__actions">
+                  <button
+                    className="primary narrow"
+                    onClick={() => navigate(`/dm/${friend.username}`)}
+                  >
+                    Message
+                  </button>
                   <button
                     className="secondary narrow"
                     onClick={() => void handleRemoveFriend(friend.username)}
