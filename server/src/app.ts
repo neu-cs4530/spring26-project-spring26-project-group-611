@@ -10,6 +10,7 @@ import * as game from "./controllers/game.controller.ts";
 import * as gameInvite from "./controllers/game.invite.controller.ts";
 import * as user from "./controllers/user.controller.ts";
 import * as thread from "./controllers/thread.controller.ts";
+import * as dm from "./controllers/dm.controller.ts";
 import { type GameServer } from "./types.ts";
 
 export const app = express();
@@ -72,6 +73,12 @@ app.use(
         .post("/accept", gameInvite.postAccept)
         .post("/decline", gameInvite.postDecline)
         .post("/toggle-accept", gameInvite.postToggleAccept),
+    )
+    .use(
+      Router()
+        .post("/start", dm.postStart)
+        .post("/send", dm.postSend)
+        .post("/messages", dm.postMessages),
     ),
 );
 

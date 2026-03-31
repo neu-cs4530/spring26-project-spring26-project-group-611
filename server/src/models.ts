@@ -167,11 +167,13 @@ export interface GameInviteRecord {
  * - `senderId`: the user who sent the message
  * - `text`: the message contents
  * - `createdAt`: when the message was sent
+ * - `conversationId`: the id of the conversation
  */
 export interface DirectMessageRecord {
   senderId: RecordId;
   text: string;
   createdAt: DateISO;
+  conversationId: string;
 }
 
 /**

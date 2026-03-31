@@ -345,3 +345,5 @@ export async function removeFriend(
 
   return;
 }
+
+export { areFriends };
