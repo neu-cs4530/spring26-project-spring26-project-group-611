@@ -6,6 +6,10 @@ export default function NewGame() {
   const { gameKey, handleInputChange, err, handleSubmit } = useNewGameForm();
   const [visibility, setVisibility] = useState<"public" | "private">("public");
 
+  let playerRangeText: string | null = null;
+  if (gameKey === "nim") playerRangeText = "Requires exactly 2 players";
+  else if (gameKey === "guess") playerRangeText = "Requires 2+ players";
+
   return (
     <form className="content spacedSection" onSubmit={(e) => handleSubmit(e, visibility)}>
       <h2>Create new game</h2>
@@ -18,6 +22,7 @@ export default function NewGame() {
             </option>
           ))}
         </select>
+        {playerRangeText && <p className="note">{playerRangeText}</p>}
       </div>
 
       <div className="form-visibility">

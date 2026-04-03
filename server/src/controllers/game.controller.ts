@@ -4,6 +4,7 @@ import {
   withAuth,
   zGameInvitePayload,
   zGameCreatePayload,
+  zGameKickPayload,
   zGameMakeMovePayload,
 } from "@gamenite/shared";
 import { type RestAPI, type GameViewUpdates, type SocketAPI, type GameServer } from "../types.ts";
@@ -14,6 +15,7 @@ import {
   getGames,
   invitePlayerToGame,
   joinGame,
+  kickPlayer,
   startGame,
   updateGame,
   viewGame,
@@ -113,6 +115,32 @@ export const postInvite: RestAPI<{ gameId: string; toUsername: string }> = async
     res.send(invite);
   } catch (err) {
     res.status(400).send({ error: err instanceof Error ? err.message : "Could not invite user" });
+  }
+};
+
+/**
+ * Handle POST requests to `/api/game/kick` by removing a player from the
+ * waiting room. Only the host may kick, and only before the game starts.
+ */
+export const postKick: RestAPI<GameInfo> = async (req, res) => {
+  const body = withAuth(zGameKickPayload).safeParse(req.body);
+  if (body.error) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const user = await checkAuth(body.data.auth);
+  if (!user) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  try {
+    const game = await kickPlayer(body.data.payload.gameId, user, body.data.payload.username);
+    emitGamePlayersUpdated(game.gameId, game.players);
+    res.send(game);
+  } catch (err) {
+    res.status(400).send({ error: err instanceof Error ? err.message : "Could not kick player" });
   }
 };
 

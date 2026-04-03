@@ -11,6 +11,7 @@ import { type SafeUserInfo } from "./user.types.ts";
  * - `createdAt`: when the game was created
  * - `createdBy`: username of the person who created the game
  * - `minPlayers`: the minimum number of players required to start the game
+ * - `maxPlayers`: the maximum number of players allowed (null = unlimited)
  * - `visibility`: private or public game
  */
 export interface GameInfo {
@@ -22,6 +23,7 @@ export interface GameInfo {
   createdAt: Date;
   createdBy: SafeUserInfo;
   minPlayers: number;
+  maxPlayers: number | null;
   visibility: "public" | "private";
 }
 
@@ -83,6 +85,12 @@ export type GameMakeMovePayload = z.infer<typeof zGameMakeMovePayload>;
 export const zGameMakeMovePayload = z.object({
   gameId: z.string(),
   move: z.unknown(),
+});
+
+export type GameKickPayload = z.infer<typeof zGameKickPayload>;
+export const zGameKickPayload = z.object({
+  gameId: z.string(),
+  username: z.string(),
 });
 
 /*** INDIVIDUAL GAME TYPES ***/

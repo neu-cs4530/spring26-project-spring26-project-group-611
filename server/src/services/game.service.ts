@@ -33,6 +33,7 @@ async function populateGameInfo(gameId: string): Promise<GameInfo> {
     type: game.type,
     status: !game.state ? "waiting" : game.done ? "done" : "active",
     minPlayers: gameServices[game.type].minPlayers,
+    maxPlayers: gameServices[game.type].maxPlayers,
     visibility: game.visibility ?? "public",
   };
 }
@@ -250,6 +251,47 @@ export async function updateGame(
     moveDescription: result.moveDescription,
     chatId: game.chat,
   };
+}
+
+/**
+ * Removes a player from a game's waiting room. Only the host may kick, and only
+ * before the game has started.
+ *
+ * @param gameId - Ostensible game id
+ * @param host - Authenticated user performing the kick
+ * @param toUsername - Username of the player to be kicked
+ * @returns the updated game info object
+ * @throws if the game is invalid, the host does not own the game, the game has
+ * started, or the target player is not in the waiting room
+ */
+export async function kickPlayer(
+  gameId: string,
+  host: UserWithId,
+  toUsername: string,
+): Promise<GameInfo> {
+  const game = await GameRepo.find(gameId);
+  if (!game) throw new Error(`user ${host.username} kicking from invalid game`);
+  if (game.createdBy !== host.userId) {
+    throw new Error(`user ${host.username} kicking from game they do not host`);
+  }
+  if (game.state) {
+    throw new Error(`cannot kick players after a game has started`);
+  }
+  if (host.username === toUsername) {
+    throw new Error(`host cannot kick themselves`);
+  }
+
+  const target = await getUserByUsername(toUsername);
+  if (!target) throw new Error(`user ${toUsername} does not exist`);
+
+  if (!game.players.includes(target.userId)) {
+    throw new Error(`user ${toUsername} is not in this game`);
+  }
+
+  game.players = game.players.filter((id) => id !== target.userId);
+  await GameRepo.set(gameId, game);
+
+  return populateGameInfo(gameId);
 }
 
 /**

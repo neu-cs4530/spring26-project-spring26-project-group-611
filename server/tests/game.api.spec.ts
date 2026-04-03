@@ -4,6 +4,7 @@ import { app } from "../src/app.ts";
 import { randomUUID } from "crypto";
 import { UserRepo } from "../src/repository.ts";
 import { getUserByUsername } from "../src/services/auth.service.ts";
+import { joinGame } from "../src/services/game.service.ts";
 
 let response: Response;
 
@@ -52,6 +53,7 @@ describe("POST /api/game/create", () => {
       },
       createdAt: expect.anything(),
       minPlayers: 2,
+      maxPlayers: 2,
       players: [
         {
           username: "user3",
@@ -112,6 +114,94 @@ describe("GET /api/game/list", () => {
         players: [{ username: "user2" }, { username: "user3" }],
       },
     ]);
+  });
+});
+
+describe("POST /api/game/kick", () => {
+  it("should return 400 on ill-formed payload", async () => {
+    response = await supertest(app).post(`/api/game/kick`).send({ auth: auth3, payload: 9 });
+    expect(response.status).toBe(400);
+  });
+
+  it("should return 403 with bad auth", async () => {
+    response = await supertest(app)
+      .post(`/api/game/kick`)
+      .send({ auth: authBad, payload: { gameId: "any", username: "user2" } });
+    expect(response.status).toBe(403);
+  });
+
+  it("should return 400 when the game does not exist", async () => {
+    response = await supertest(app)
+      .post(`/api/game/kick`)
+      .send({ auth: auth3, payload: { gameId: "nonexistent", username: "user2" } });
+    expect(response.status).toBe(400);
+  });
+
+  it("should return 400 when the requester is not the host", async () => {
+    // user3 creates a game
+    response = await supertest(app)
+      .post(`/api/game/create`)
+      .send({ auth: auth3, payload: { type: "nim", visibility: "public" } });
+    expect(response.status).toBe(200);
+    const gameId = response.body.gameId;
+
+    // user2 tries to kick — but user2 is not the host
+    response = await supertest(app)
+      .post(`/api/game/kick`)
+      .send({
+        auth: { username: "user2", password: "pwd2222" },
+        payload: { gameId, username: "user3" },
+      });
+    expect(response.status).toBe(400);
+  });
+
+  it("should return 400 when the target is not in the game", async () => {
+    response = await supertest(app)
+      .post(`/api/game/create`)
+      .send({ auth: auth3, payload: { type: "nim", visibility: "public" } });
+    const gameId = response.body.gameId;
+
+    response = await supertest(app)
+      .post(`/api/game/kick`)
+      .send({ auth: auth3, payload: { gameId, username: "user1" } });
+    expect(response.status).toBe(400);
+  });
+
+  it("should return 400 when the host tries to kick themselves", async () => {
+    response = await supertest(app)
+      .post(`/api/game/create`)
+      .send({ auth: auth3, payload: { type: "nim", visibility: "public" } });
+    const gameId = response.body.gameId;
+
+    response = await supertest(app)
+      .post(`/api/game/kick`)
+      .send({ auth: auth3, payload: { gameId, username: "user3" } });
+    expect(response.status).toBe(400);
+  });
+
+  it("should successfully kick a player from the waiting room", async () => {
+    // user3 creates a public game
+    response = await supertest(app)
+      .post(`/api/game/create`)
+      .send({ auth: auth3, payload: { type: "guess", visibility: "public" } });
+    expect(response.status).toBe(200);
+    const gameId: string = response.body.gameId as string;
+
+    // user2 joins the game directly via the service
+    const user2 = await getUserByUsername("user2");
+    if (!user2) throw new Error("user2 not found");
+    await joinGame(gameId, { userId: user2.userId, username: "user2" });
+
+    // host kicks user2
+    response = await supertest(app)
+      .post(`/api/game/kick`)
+      .send({ auth: auth3, payload: { gameId, username: "user2" } });
+    expect(response.status).toBe(200);
+    const usernames = (response.body as { players: { username: string }[] }).players.map(
+      (p) => p.username,
+    );
+    expect(usernames).not.toContain("user2");
+    expect(usernames).toContain("user3");
   });
 });
 

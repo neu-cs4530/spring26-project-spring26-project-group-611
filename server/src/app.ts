@@ -29,6 +29,7 @@ app.use(
         .Router() //
         .post("/create", game.postCreate)
         .post("/invite", game.postInvite)
+        .post("/kick", game.postKick)
         .get("/list", game.getList)
         .get("/:id", game.getById),
     )

@@ -8,7 +8,7 @@ import useSocketsForGame from "../hooks/useSocketsForGame.ts";
 import useTimeSince from "../hooks/useTimeSince.ts";
 import UserLink from "./UserLink.tsx";
 import { getCurrentFriends } from "../services/friendService.ts";
-import { inviteToGame } from "../services/gameService.ts";
+import { inviteToGame, kickFromGame } from "../services/gameService.ts";
 
 /**
  * A game panel allows viewing the status and players of a live game
@@ -19,6 +19,7 @@ export default function GamePanel({
   players: initialPlayers,
   createdAt,
   minPlayers,
+  maxPlayers,
   createdBy,
 }: GameInfo) {
   const { user, pass } = useLoginContext();
@@ -32,8 +33,20 @@ export default function GamePanel({
   const [inviteState, setInviteState] = useState<
     { type: "idle" } | { type: "sending" } | { type: "sent" } | { type: "error"; message: string }
   >({ type: "idle" });
+  const [kickError, setKickError] = useState<string | null>(null);
 
   const isHost = createdBy.username === user.username;
+
+  async function kickPlayer(username: string) {
+    setKickError(null);
+    const result = await kickFromGame(
+      { username: user.username, password: pass },
+      { gameId, username },
+    );
+    if ("error" in result) {
+      setKickError(result.error);
+    }
+  }
 
   const { view, players, userPlayerIndex, hasWatched, joinGame, startGame } = useSocketsForGame(
     gameId,
@@ -91,6 +104,11 @@ export default function GamePanel({
       <div className="gameRoster">
         <h2>{gameNames[type]}</h2>
         <div className="smallAndGray">Game room created {timeSince(createdAt)}</div>
+        <div className="smallAndGray">
+          {maxPlayers !== null
+            ? `Players: ${minPlayers}-${maxPlayers} required`
+            : `Players: ${minPlayers}+ required`}
+        </div>
         <div className="dottedList" role="list">
           {players.map((player, index) => (
             <div className="dottedListItem" role="listitem" key={player.username}>
@@ -99,11 +117,21 @@ export default function GamePanel({
               ) : (
                 <span>
                   Player #{index + 1} is <UserLink user={player} />
+                  {isHost && !view && (
+                    <button
+                      className="primary narrow"
+                      style={{ position: "static", marginLeft: "0.5rem" }}
+                      onClick={() => void kickPlayer(player.username)}
+                    >
+                      Kick
+                    </button>
+                  )}
                 </span>
               )}
             </div>
           ))}
         </div>
+        {kickError && <div className="error-message">{kickError}</div>}
         {
           // If the game hasn't started and user hasn't joined, they can join
           userPlayerIndex < 0 && !view && (

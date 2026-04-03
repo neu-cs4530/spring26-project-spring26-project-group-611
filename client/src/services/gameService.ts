@@ -67,3 +67,21 @@ export const inviteToGame = async (
     return exceptionToErrorMsg(error);
   }
 };
+
+/**
+ * Kicks a player from a game's waiting room (host only, before game starts).
+ */
+export const kickFromGame = async (
+  auth: UserAuth,
+  payload: { gameId: string; username: string },
+): APIResponse<GameInfo> => {
+  try {
+    const res = await api.post<GameInfo | ErrorMsg>(`${GAME_API_URL}/kick`, {
+      auth,
+      payload,
+    });
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};

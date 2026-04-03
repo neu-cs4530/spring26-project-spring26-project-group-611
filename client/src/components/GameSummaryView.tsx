@@ -15,16 +15,19 @@ export default function GameSummaryView({
   players,
   createdAt,
   createdBy,
+  minPlayers,
+  maxPlayers,
   inviteStatus,
 }: GameInfo & { inviteStatus?: "invited" }) {
   const timeSince = useTimeSince();
   const navigate = useNavigate();
   const numPlayers = players.length;
+  const playerRange = maxPlayers !== null ? `${minPlayers}-${maxPlayers}` : `${minPlayers}+`;
   return (
     <div className="gameSummary" role="listitem">
       <div className="stats" onClick={() => navigate(`/game/${gameId}`)}>
         {status}
-        {status !== "done" && `, ${numPlayers} player${numPlayers === 1 ? "" : "s"}`}
+        {status !== "done" && `, ${numPlayers}/${playerRange} player${numPlayers === 1 ? "" : "s"}`}
       </div>
       <NavLink to={`/game/${gameId}`} className="mid">
         A game of {gameNames[type]}
