@@ -24,6 +24,22 @@ export interface ProfileViewInfo {
   areFriends: boolean;
   canViewStats: boolean;
   stats: ProfileStatsInfo | null;
+  personalInfoVisibility: ProfileFieldVisibility;
+  personalInfo: ProfilePersonalInfo | null;
+}
+
+/**
+ * Visibility options for profile fields
+ */
+export type ProfileFieldVisibility = "public" | "friends" | "private";
+
+/**
+ * Personal profile information controlled by visibility rules
+ */
+export interface ProfilePersonalInfo {
+  age: number | null;
+  hometown: string | null;
+  favoriteGame: string | null;
 }
 
 /**
@@ -55,4 +71,8 @@ export const zUserUpdateRequest = z.object({
   password: z.string().optional(),
   display: z.string().optional(),
   canViewStats: z.boolean().optional(),
+  age: z.number().int().min(0).max(150).nullable().optional(),
+  hometown: z.string().trim().max(120).nullable().optional(),
+  favoriteGame: z.string().trim().max(120).nullable().optional(),
+  personalInfoVisibility: z.enum(["public", "friends", "private"]).optional(),
 });

@@ -1,4 +1,9 @@
-import { type ProfileViewInfo, type SafeUserInfo, type UserUpdateRequest } from "@gamenite/shared";
+import {
+  type ProfileFieldVisibility,
+  type ProfileViewInfo,
+  type SafeUserInfo,
+  type UserUpdateRequest,
+} from "@gamenite/shared";
 import { getUserByUsername, updateAuth } from "./auth.service.ts";
 import { getProfileStats } from "./profileStats.service.ts";
 import { UserRepo } from "../repository.ts";
@@ -44,6 +49,10 @@ export async function createUser(
     friends: [],
     canViewStats: true,
     acceptGameInvites: true,
+    age: null,
+    hometown: null,
+    favoriteGame: null,
+    personalInfoVisibility: "private",
   });
   await updateAuth(username, password, id);
   return Promise.resolve({
@@ -99,7 +108,15 @@ export async function searchUsersByUsername(query: string): Promise<SafeUserInfo
  */
 export async function updateUser(
   username: string,
-  { display, password, canViewStats }: UserUpdateRequest,
+  {
+    display,
+    password,
+    canViewStats,
+    age,
+    hometown,
+    favoriteGame,
+    personalInfoVisibility,
+  }: UserUpdateRequest,
 ): Promise<SafeUserInfo> {
   const user = await getUserByUsername(username);
   if (!user) throw new Error(`No user ${username}`);
@@ -107,8 +124,26 @@ export async function updateUser(
   const newUser = await UserRepo.get(user.userId);
   if (display !== undefined) newUser.display = display;
   if (canViewStats !== undefined) newUser.canViewStats = canViewStats;
+  if (age !== undefined) newUser.age = age;
+  if (hometown !== undefined) newUser.hometown = hometown;
+  if (favoriteGame !== undefined) newUser.favoriteGame = favoriteGame;
+  if (personalInfoVisibility !== undefined) newUser.personalInfoVisibility = personalInfoVisibility;
   await UserRepo.set(user.userId, newUser);
   return populateSafeUserInfo(user.userId);
+}
+
+/**
+ * Determine whether a field with visibility controls can be viewed
+ */
+export function canViewerSeeField(
+  isSelf: boolean,
+  areFriends: boolean,
+  visibility: ProfileFieldVisibility,
+): boolean {
+  if (isSelf) return true;
+  if (visibility === "public") return true;
+  if (visibility === "friends") return areFriends;
+  return false;
 }
 
 /**
@@ -138,6 +173,8 @@ export async function getProfileViewByUsername(
   const isSelf = target.userId === viewer.userId;
   const areFriends = (targetRecord.friends ?? []).includes(viewer.userId);
   const canViewStats = canViewerSeeStats(isSelf, areFriends, targetRecord.canViewStats);
+  const personalInfoVisibility = targetRecord.personalInfoVisibility ?? "private";
+  const canViewPersonalInfo = canViewerSeeField(isSelf, areFriends, personalInfoVisibility);
   const stats = canViewStats ? await getProfileStats(target.userId) : null;
 
   return {
@@ -147,5 +184,13 @@ export async function getProfileViewByUsername(
     areFriends,
     canViewStats,
     stats,
+    personalInfoVisibility,
+    personalInfo: canViewPersonalInfo
+      ? {
+          age: targetRecord.age ?? null,
+          hometown: targetRecord.hometown ?? null,
+          favoriteGame: targetRecord.favoriteGame ?? null,
+        }
+      : null,
   };
 }

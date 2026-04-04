@@ -130,6 +130,10 @@ export interface UserRecord {
   friends: RecordId[]; // adding this for the final project
   canViewStats: boolean;
   acceptGameInvites: boolean;
+  age?: number | null;
+  hometown?: string | null;
+  favoriteGame: string | null;
+  personalInfoVisibility?: "public" | "friends" | "private";
 }
 
 /**
