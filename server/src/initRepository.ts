@@ -5,6 +5,7 @@ import {
   ChatRepo,
   CommentRepo,
   GameRepo,
+  GameInviteRepo,
   MessageRepo,
   ThreadRepo,
   UserRepo,
@@ -122,6 +123,7 @@ export async function resetEverythingToDefaults() {
   await ChatRepo.clear();
   await CommentRepo.clear();
   await GameRepo.clear();
+  await GameInviteRepo.clear();
   await MessageRepo.clear();
   await ThreadRepo.clear();
   await UserRepo.clear();

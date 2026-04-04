@@ -4,6 +4,29 @@ import { getUserByUsername } from "./auth.service.ts";
 import { joinGame } from "./game.service.ts";
 
 /**
+ * Delete pending invites that reference a missing game or a game that is already done
+ *
+ * @returns number of invites deleted
+ */
+async function cleanupInvalidPendingInvites(): Promise<number> {
+  const allKeys = await GameInviteRepo.getAllKeys();
+  let cleanedCount = 0;
+  for (const key of allKeys) {
+    const record = await GameInviteRepo.find(key);
+    //the rules of expired and unused private game invites
+    if (!record || record.status !== "pending") {
+      continue;
+    }
+    const game = await GameRepo.find(record.gameId);
+    if (!game || game.done) {
+      await GameInviteRepo.delete(key);
+      cleanedCount += 1;
+    }
+  }
+  return cleanedCount;
+}
+
+/**
  * Convert a stored GameInviteRecord +id into a client-safe GameInviteInfo.
  */
 async function toGameInviteInfo(
@@ -122,6 +145,7 @@ export async function sendGameInvite(
  * @returns a list of GameInviteInfo objects
  */
 export async function getInvitesForUser(userId: string): Promise<GameInviteInfo[]> {
+  await cleanupInvalidPendingInvites();
   const allKeys = await GameInviteRepo.getAllKeys();
   const results: GameInviteInfo[] = [];
   for (const key of allKeys) {
@@ -140,6 +164,7 @@ export async function getInvitesForUser(userId: string): Promise<GameInviteInfo[
  * @returns a list of GameInviteInfo objects
  */
 export async function getInvitesSentByUser(hostUserId: string): Promise<GameInviteInfo[]> {
+  await cleanupInvalidPendingInvites();
   const allKeys = await GameInviteRepo.getAllKeys();
   const results: GameInviteInfo[] = [];
   for (const key of allKeys) {
