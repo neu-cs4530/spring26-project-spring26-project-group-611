@@ -21,6 +21,7 @@ export default function GamePanel({
   minPlayers,
   maxPlayers,
   createdBy,
+  visibility,
 }: GameInfo) {
   const { user, pass } = useLoginContext();
   const timeSince = useTimeSince();
@@ -105,6 +106,11 @@ export default function GamePanel({
         <h2>{gameNames[type]}</h2>
         <div className="smallAndGray">Game room created {timeSince(createdAt)}</div>
         <div className="smallAndGray">
+          <span
+            className={`gameSummary__visibility-badge gameSummary__visibility-badge--${visibility}`}
+          >
+            {visibility}
+          </span>
           {maxPlayers !== null
             ? `Players: ${minPlayers}-${maxPlayers} required`
             : `Players: ${minPlayers}+ required`}
