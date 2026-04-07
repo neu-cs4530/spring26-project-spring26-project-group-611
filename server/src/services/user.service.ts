@@ -22,6 +22,7 @@ export async function populateSafeUserInfo(userId: string): Promise<SafeUserInfo
     username: record.username,
     display: record.display,
     createdAt: new Date(record.createdAt),
+    acceptGameInvites: record.acceptGameInvites ?? true,
   });
 }
 
@@ -59,6 +60,7 @@ export async function createUser(
     username,
     createdAt,
     display: username,
+    acceptGameInvites: true,
   });
 }
 
@@ -95,6 +97,7 @@ export async function searchUsersByUsername(query: string): Promise<SafeUserInfo
       username: u.username,
       display: u.display,
       createdAt: new Date(u.createdAt),
+      acceptGameInvites: u.acceptGameInvites ?? true,
     }));
 }
 

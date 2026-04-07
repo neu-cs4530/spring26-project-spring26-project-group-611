@@ -4,6 +4,7 @@ import useLoginContext from "../hooks/useLoginContext";
 import useTimeSince from "../hooks/useTimeSince";
 import useEditProfileForm from "../hooks/useEditProfileForm";
 import { viewProfile } from "../services/userService";
+import { toggleAcceptGameInvites } from "../services/gameInviteService";
 import { gameNames } from "../util/consts";
 import "./ViewProfile.css";
 
@@ -11,6 +12,7 @@ export default function UpdateProfile() {
   const { user, pass } = useLoginContext();
   const timeSince = useTimeSince();
   const [showPass, setShowPass] = useState(false);
+  const [acceptGameInvites, setAcceptGameInvites] = useState(user.acceptGameInvites ?? true);
   const [statsState, setStatsState] = useState<
     | { type: "loading" }
     | { type: "error"; msg: string }
@@ -48,6 +50,23 @@ export default function UpdateProfile() {
       canceled = true;
     };
   }, [user.username, pass]);
+  const handleToggleAcceptGameInvites = async () => {
+    try {
+      const result = await toggleAcceptGameInvites({
+        username: user.username,
+        password: pass,
+      });
+
+      if ("error" in result) {
+        console.error(result.error);
+        return;
+      }
+
+      setAcceptGameInvites(result.acceptGameInvites);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const renderSelfStats = () => {
     if (statsState.type === "loading") {
@@ -137,7 +156,7 @@ export default function UpdateProfile() {
           <button
             className="secondary narrow"
             onClick={(e) => {
-              e.preventDefault(); // Don't submit form
+              e.preventDefault();
               setDisplay(user.display);
             }}
           >
@@ -146,6 +165,7 @@ export default function UpdateProfile() {
         </div>
       </div>
       <hr />
+
       <div className="spacedSection">
         <h3>Reset password</h3>
         <div style={{ display: "flex", flexDirection: "row", gap: "0.5rem" }}>
@@ -159,7 +179,7 @@ export default function UpdateProfile() {
           <button
             className="secondary narrow"
             onClick={(e) => {
-              e.preventDefault(); // Don't submit form
+              e.preventDefault();
               setPassword("");
               setConfirm("");
             }}
@@ -170,7 +190,7 @@ export default function UpdateProfile() {
             className="secondary narrow"
             aria-label="Toggle show password"
             onClick={(e) => {
-              e.preventDefault(); // Don't submit form
+              e.preventDefault();
               setShowPass((v) => !v);
             }}
           >
@@ -188,6 +208,7 @@ export default function UpdateProfile() {
         </div>
       </div>
       <hr />
+
       <div className="spacedSection">
         <h3>Profile visibility</h3>
         <div className="labeled-section">
@@ -203,6 +224,23 @@ export default function UpdateProfile() {
         </div>
       </div>
       <hr />
+
+      <div className="spacedSection">
+        <h3>Game invites</h3>
+        <div className="labeled-section">
+          <input
+            type="checkbox"
+            id="acceptGameInvitesToggle"
+            checked={acceptGameInvites}
+            onChange={handleToggleAcceptGameInvites}
+          />
+          <label htmlFor="acceptGameInvitesToggle">
+            Allow other players to send me game invites
+          </label>
+        </div>
+      </div>
+      <hr />
+
       {err && <p className="error-message">{err}</p>}
       <div>
         <button className="primary narrow">Submit</button>

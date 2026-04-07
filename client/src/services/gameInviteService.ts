@@ -54,3 +54,23 @@ export const declineGameInvite = async (
     return exceptionToErrorMsg(error);
   }
 };
+
+/**
+ * Sends a POST request to toggle whether the user accepts game invites
+ */
+export const toggleAcceptGameInvites = async (
+  auth: UserAuth,
+): APIResponse<{ acceptGameInvites: boolean }> => {
+  try {
+    const res = await api.post<{ acceptGameInvites: boolean } | ErrorMsg>(
+      `${GAME_INVITE_API_URL}/toggle-accept`,
+      {
+        auth,
+        payload: {},
+      },
+    );
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};

@@ -7,11 +7,13 @@ import type { GameKey } from "./game.types.ts";
  * - `username`: unique username of the user
  * - `display`: A display name
  * - `createdAt`: when this when the user registered.
+ * - `acceptGameInvites`: if true they will accept game invites
  */
 export interface SafeUserInfo {
   username: string;
   display: string;
   createdAt: Date;
+  acceptGameInvites: boolean;
 }
 
 /**
