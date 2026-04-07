@@ -22,7 +22,12 @@ describe("Header component", () => {
     render(
       <LoginContext
         value={{
-          user: { username: "username", display: "displayname", createdAt: new Date("01-02-2025") },
+          user: {
+            username: "username",
+            display: "displayname",
+            createdAt: new Date("01-02-2025"),
+            acceptGameInvites: true,
+          },
           pass: "pwd",
           socket: {} as GameSocket,
           reset: mockedReset,
@@ -43,6 +48,7 @@ describe("Header component", () => {
             username: "username123",
             display: "displayname",
             createdAt: new Date("01-02-2025"),
+            acceptGameInvites: true,
           },
           pass: "pwd",
           socket: {} as GameSocket,
@@ -66,6 +72,7 @@ describe("Header component", () => {
             username: "username123",
             display: "displayname",
             createdAt: new Date("01-02-2025"),
+            acceptGameInvites: true,
           },
           pass: "pwd",
           socket: {} as GameSocket,

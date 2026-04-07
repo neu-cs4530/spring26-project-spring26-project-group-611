@@ -26,6 +26,7 @@ describe("message.service", () => {
       username: "user1",
       display: "User One",
       createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      acceptGameInvites: true,
     });
 
     const result = await createMessage(user, "hello world", createdAt);
