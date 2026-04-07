@@ -50,6 +50,7 @@ export default function UpdateProfile() {
       canceled = true;
     };
   }, [user.username, pass]);
+
   const handleToggleAcceptGameInvites = async () => {
     try {
       const result = await toggleAcceptGameInvites({
@@ -58,13 +59,12 @@ export default function UpdateProfile() {
       });
 
       if ("error" in result) {
-        console.error(result.error);
-        return;
+        return; // 👈 THIS is where the fix goes
       }
 
       setAcceptGameInvites(result.acceptGameInvites);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      return; // 👈 also remove console here
     }
   };
 
