@@ -205,6 +205,47 @@ describe("POST /api/game/kick", () => {
     expect(usernames).not.toContain("user2");
     expect(usernames).toContain("user3");
   });
+
+  it("should prevent a kicked player from rejoining a private game", async () => {
+    // Make user2 a friend of user3 so they can be invited
+    const host = await getUserByUsername("user3");
+    const friend = await getUserByUsername("user2");
+    if (!host || !friend) throw new Error("Missing users");
+    const hostData = await UserRepo.get(host.userId);
+    const friendData = await UserRepo.get(friend.userId);
+    if (!hostData.friends.includes(friend.userId)) {
+      hostData.friends.push(friend.userId);
+      friendData.friends.push(host.userId);
+      await UserRepo.set(host.userId, hostData);
+      await UserRepo.set(friend.userId, friendData);
+    }
+
+    // user3 creates a private game
+    response = await supertest(app)
+      .post(`/api/game/create`)
+      .send({ auth: auth3, payload: { type: "guess", visibility: "private" } });
+    expect(response.status).toBe(200);
+    const gameId: string = response.body.gameId as string;
+
+    // host invites user2
+    await supertest(app)
+      .post(`/api/game/invite`)
+      .send({ auth: auth3, payload: { gameId, toUsername: "user2" } });
+
+    // user2 joins
+    await joinGame(gameId, { userId: friend.userId, username: "user2" });
+
+    // host kicks user2
+    response = await supertest(app)
+      .post(`/api/game/kick`)
+      .send({ auth: auth3, payload: { gameId, username: "user2" } });
+    expect(response.status).toBe(200);
+
+    // user2 tries to rejoin — should be rejected
+    await expect(joinGame(gameId, { userId: friend.userId, username: "user2" })).rejects.toThrow(
+      "not invited",
+    );
+  });
 });
 
 describe("POST /api/game/invite", () => {

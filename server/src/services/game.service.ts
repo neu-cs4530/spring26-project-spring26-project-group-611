@@ -95,7 +95,7 @@ export async function joinGame(gameId: string, user: UserWithId): Promise<GameIn
     const invited = game.invitees ?? [];
 
     if (!invited.includes(user.userId) && user.userId !== game.createdBy) {
-      throw new Error(`user ${user.username} was not invited to private game`);
+      throw new Error(`You are not invited to this private game`);
     }
   }
   if (game.state) {
@@ -289,6 +289,9 @@ export async function kickPlayer(
   }
 
   game.players = game.players.filter((id) => id !== target.userId);
+  if (game.invitees) {
+    game.invitees = game.invitees.filter((id) => id !== target.userId);
+  }
   await GameRepo.set(gameId, game);
 
   return populateGameInfo(gameId);

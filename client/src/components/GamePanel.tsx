@@ -49,10 +49,8 @@ export default function GamePanel({
     }
   }
 
-  const { view, players, userPlayerIndex, hasWatched, joinGame, startGame } = useSocketsForGame(
-    gameId,
-    initialPlayers,
-  );
+  const { view, players, userPlayerIndex, hasWatched, joinGame, startGame, joinError } =
+    useSocketsForGame(gameId, initialPlayers);
 
   useEffect(() => {
     if (!isHost) return;
@@ -141,9 +139,12 @@ export default function GamePanel({
         {
           // If the game hasn't started and user hasn't joined, they can join
           userPlayerIndex < 0 && !view && (
-            <button className="primary narrow" onClick={joinGame}>
-              Join Game
-            </button>
+            <>
+              <button className="primary narrow" onClick={joinGame}>
+                Join Game
+              </button>
+              {joinError && <div className="error-message">{joinError}</div>}
+            </>
           )
         }
         {

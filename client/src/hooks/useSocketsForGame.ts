@@ -22,6 +22,7 @@ export default function useSocketsForGame(gameId: string, initialPlayers: SafeUs
   const [view, setView] = useState<null | TaggedGameView>(null);
   const [hasWatched, setHasWatched] = useState<boolean>(false);
   const [players, setPlayers] = useState<SafeUserInfo[]>(initialPlayers);
+  const [joinError, setJoinError] = useState<string | null>(null);
   const userPlayerIndex = players.findIndex(({ username }) => username === user.username);
 
   useEffect(() => {
@@ -37,6 +38,10 @@ export default function useSocketsForGame(gameId: string, initialPlayers: SafeUs
       setPlayers(newPlayers);
     };
 
+    const handleJoinError = (message: string) => {
+      setJoinError(message);
+    };
+
     const handleStateUpdated = (view: TaggedGameView & { forPlayer: boolean }) => {
       if (!view) return;
       if (userPlayerIndex >= 0 && !view.forPlayer) return;
@@ -46,16 +51,19 @@ export default function useSocketsForGame(gameId: string, initialPlayers: SafeUs
     socket.on("gameWatched", handleWatched);
     socket.on("gamePlayersUpdated", handlePlayersUpdated);
     socket.on("gameStateUpdated", handleStateUpdated);
+    socket.on("gameJoinError", handleJoinError);
     socket.emit("gameWatch", { auth, payload: gameId });
 
     return () => {
       socket.off("gameWatched", handleWatched);
       socket.off("gamePlayersUpdated", handlePlayersUpdated);
       socket.off("gameStateUpdated", handleStateUpdated);
+      socket.off("gameJoinError", handleJoinError);
     };
   }, [gameId, socket, userPlayerIndex, auth]);
 
   function joinGame() {
+    setJoinError(null);
     socket.emit("gameJoinAsPlayer", { auth, payload: gameId });
   }
 
@@ -70,5 +78,6 @@ export default function useSocketsForGame(gameId: string, initialPlayers: SafeUs
     view,
     joinGame,
     startGame,
+    joinError,
   };
 }

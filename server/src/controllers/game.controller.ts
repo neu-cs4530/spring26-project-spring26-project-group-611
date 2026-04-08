@@ -218,6 +218,7 @@ export const socketJoinAsPlayer: SocketAPI = (socket, io) => async (body) => {
     }
   } catch (err) {
     logSocketError(socket, err);
+    socket.emit("gameJoinError", err instanceof Error ? err.message : "Could not join game");
   }
 };
 

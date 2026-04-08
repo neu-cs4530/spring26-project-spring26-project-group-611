@@ -41,6 +41,7 @@ export interface ServerToClientEvents {
   chatUserJoined: (payload: ChatUserJoinedPayload) => void;
   chatUserLeft: (payload: ChatUserLeftPayload) => void;
   gamePlayersUpdated: (payload: SafeUserInfo[]) => void;
+  gameJoinError: (payload: string) => void;
   gameCreated: (payload: GameInfo) => void;
   gameStateUpdated: (payload: TaggedGameView & { forPlayer: boolean }) => void;
   gameWatched: (payload: GamePlayInfo) => void;
