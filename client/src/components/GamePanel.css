@@ -9,10 +9,11 @@
   position: relative;
 }
 
-.gameRoster button {
-  position: absolute;
-  right: 0;
-  top: 0;
+.gameRosterButtons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
 }
 
 .gameFrame {
