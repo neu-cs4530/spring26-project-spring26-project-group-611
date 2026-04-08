@@ -2,11 +2,23 @@
   display: grid;
   grid-template-rows: 3rem 1fr;
   grid-template-columns: 200px 1fr;
-  grid-template-areas: "header header" "sidebar main";
+  grid-template-areas:
+    "header header"
+    "sidebar main";
   min-height: 100vh;
   --content-vh: calc(100vh - 3rem);
 }
 
+.header {
+  grid-area: header;
+}
+
+.sidebar {
+  grid-area: sidebar;
+}
+
 .right_main {
   grid-area: main;
+  padding: 1rem;
+  min-width: 0;
 }

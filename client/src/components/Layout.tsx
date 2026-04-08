@@ -9,14 +9,18 @@ import SideBarNav from "./SideBarNav.tsx";
  */
 export default function Layout() {
   return (
-    <>
-      <div id="main" className="main">
+    <div id="main" className="main">
+      <div className="header">
         <Header />
-        <SideBarNav />
-        <div id="right_main" className="right_main">
-          <Outlet />
-        </div>
       </div>
-    </>
+
+      <div className="sidebar">
+        <SideBarNav />
+      </div>
+
+      <div id="right_main" className="right_main">
+        <Outlet />
+      </div>
+    </div>
   );
 }
