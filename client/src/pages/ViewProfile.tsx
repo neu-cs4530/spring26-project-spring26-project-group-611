@@ -78,6 +78,23 @@ export default function ViewProfile({ username }: ViewProfileProps) {
       </div>
     );
   };
+
+  const renderPersonalInfo = (profile: ProfileViewInfo) => {
+    if (!profile.personalInfo) {
+      return (
+        <div className="smallAndGray">
+          PersonalInfo is hidden based on this user&apos;s visibility settings
+        </div>
+      );
+    }
+    return (
+      <ul>
+        <li>Age:{profile.personalInfo.age ?? "Not provided"}</li>
+        <li>Hometown:{profile.personalInfo.hometown || "Not provided"}</li>
+        <li>Favorite game:{profile.personalInfo.favoriteGame || "Not provided"}</li>
+      </ul>
+    );
+  };
   useEffect(() => {
     let cancel = false;
 
@@ -139,6 +156,10 @@ export default function ViewProfile({ username }: ViewProfileProps) {
           <div className="spacedSection">
             <h3>Game Stats</h3>
             {renderStats(componentState.user)}
+          </div>
+          <div className="spacedSection">
+            <h3>Personal information</h3>
+            {renderPersonalInfo(componentState.user)}
           </div>
 
           <div className="spacedSection">

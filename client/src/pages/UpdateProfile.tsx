@@ -18,18 +18,27 @@ export default function UpdateProfile() {
     | { type: "error"; msg: string }
     | { type: "loaded"; profile: ProfileViewInfo }
   >({ type: "loading" });
+  const loadedProfile = statsState.type === "loaded" ? statsState.profile : null;
   const {
     display,
     setDisplay,
     canViewStats,
     setCanViewStats,
+    age,
+    setAge,
+    hometown,
+    setHometown,
+    favoriteGame,
+    setFavoriteGame,
+    personalInfoVisibility,
+    setPersonalInfoVisibility,
     password,
     setPassword,
     confirm,
     setConfirm,
     err,
     handleSubmit,
-  } = useEditProfileForm();
+  } = useEditProfileForm(loadedProfile);
 
   useEffect(() => {
     let canceled = false;
@@ -224,7 +233,56 @@ export default function UpdateProfile() {
         </div>
       </div>
       <hr />
-
+      <div className="spacedSection">
+        <h3>Personal information</h3>
+        <div className="labeled-section">
+          <label htmlFor="personalInfoVisibility">Who can view my personal information</label>
+          <select
+            id="personalInfoVisibility"
+            value={personalInfoVisibility}
+            onChange={(e) =>
+              setPersonalInfoVisibility(e.target.value as "public" | "friends" | "private")
+            }
+          >
+            <option value="private"> Private (only me)</option>
+            <option value="friends"> Friends</option>
+            <option value="public"> Public</option>
+          </select>
+        </div>
+        <div className="labeled-section">
+          <label htmlFor="age">Age</label>
+          <input
+            id="age"
+            type="number"
+            min={0}
+            max={150}
+            className="widefillnotTooWide"
+            value={age}
+            onChange={(e) => setAge(e.target.value)}
+            placeholder="Optional"
+          ></input>
+        </div>
+        <div className="labeled-section">
+          <label htmlFor="hometown">Hometown</label>
+          <input
+            id="hometown"
+            className="widefilenotTooWide"
+            value={hometown}
+            onChange={(e) => setHometown(e.target.value)}
+            placeholder="Optional"
+          ></input>
+          <div className="labeled-section">
+            <label htmlFor="favoriteGame">FavoriteGame</label>
+            <input
+              id="favoriteGame"
+              className="widefilenotTooWide"
+              value={favoriteGame}
+              onChange={(e) => setFavoriteGame(e.target.value)}
+              placeholder="Optional"
+            ></input>
+          </div>
+        </div>
+      </div>
       <div className="spacedSection">
         <h3>Game invites</h3>
         <div className="labeled-section">
