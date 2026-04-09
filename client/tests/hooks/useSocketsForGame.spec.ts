@@ -169,7 +169,9 @@ describe("useSocketsForGame", () => {
 
     const onCalls = socket.on.mock.calls;
     const watchedHandler = onCalls.find(([event]) => event === "gameWatched")?.[1] as Handler;
-    const playersHandler = onCalls.find(([event]) => event === "gamePlayersUpdated")?.[1] as Handler;
+    const playersHandler = onCalls.find(
+      ([event]) => event === "gamePlayersUpdated",
+    )?.[1] as Handler;
     const stateHandler = onCalls.find(([event]) => event === "gameStateUpdated")?.[1] as Handler;
     const joinErrorHandler = onCalls.find(([event]) => event === "gameJoinError")?.[1] as Handler;
 

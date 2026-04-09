@@ -1,6 +1,7 @@
 import { renderHook, act } from "@testing-library/react";
 import type { ChangeEvent, SubmitEvent } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { AuthContext } from "../../src/contexts/LoginContext.ts";
 
 import useLoginForm from "../../src/hooks/useLoginForm.ts";
 import { loginUser, signupUser } from "../../src/services/userService.ts";
@@ -26,7 +27,7 @@ function submitEvent() {
 }
 
 describe("useLoginForm", () => {
-  const setAuth = vi.fn();
+  const setAuth = vi.fn<(auth: AuthContext | null) => void>();
 
   beforeEach(() => {
     setAuth.mockReset();
@@ -112,6 +113,10 @@ describe("useLoginForm", () => {
     expect(setAuth).toHaveBeenCalledTimes(1);
 
     const authArg = setAuth.mock.calls[0][0];
+    expect(authArg).not.toBeNull();
+    if (!authArg) {
+      throw new Error("Expected setAuth to receive an AuthContext value");
+    }
     expect(authArg.user).toEqual(loggedInUser);
     expect(authArg.pass).toBe("pw");
     expect(typeof authArg.reset).toBe("function");
