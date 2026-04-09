@@ -1,4 +1,4 @@
-import { type SubmitEvent, useEffect, useState } from "react";
+import { type Dispatch, type SetStateAction, type SubmitEvent, useState } from "react";
 import useLoginContext from "./useLoginContext.ts";
 import useAuth from "./useAuth.ts";
 import { updateUser } from "../services/userService.ts";
@@ -33,49 +33,81 @@ function profileToEditable(profile: ProfileViewInfo): EditablePersonalInfo {
  */
 export default function useEditProfileForm(profile: ProfileViewInfo | null) {
   const { user, reset } = useLoginContext();
-  const [display, setDisplay] = useState(user.display);
-  const [canViewStats, setCanViewStats] = useState(profile?.canViewStats ?? true);
+  const editable = profile ? profileToEditable(profile) : null;
+  const baseline = {
+    display: profile?.display ?? user.display,
+    canViewStats: profile?.canViewStats ?? true,
+    age: editable?.age ?? "",
+    hometown: editable?.hometown ?? "",
+    favoriteGame: editable?.favoriteGame ?? "",
+    personalInfoVisibility: editable?.personalInfoVisibility ?? ("private" as const),
+  };
+
+  const [displayEdit, setDisplayEdit] = useState<string | null>(null);
+  const [canViewStatsEdit, setCanViewStatsEdit] = useState<boolean | null>(null);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [age, setAge] = useState(profile ? profileToEditable(profile).age : "");
-  const [hometown, setHometown] = useState(profile ? profileToEditable(profile).hometown : "");
-  const [favoriteGame, setFavoriteGame] = useState(
-    profile ? profileToEditable(profile).favoriteGame : "",
-  );
-  const [personalInfoVisibility, setPersonalInfoVisibility] = useState<
-    "public" | "friends" | "private"
-  >(profile ? profileToEditable(profile).personalInfoVisibility : "private");
-  const [initialDisplay, setInitialDisplay] = useState(user.display);
-  const [initialCanViewStats, setInitialCanViewStats] = useState(profile?.canViewStats ?? true);
-  const [initialAge, setInitialAge] = useState(profile ? profileToEditable(profile).age : "");
-  const [initialHometown, setInitialHometown] = useState(
-    profile ? profileToEditable(profile).hometown : "",
-  );
-  const [initialFavoriteGame, setInitialFavoriteGame] = useState(
-    profile ? profileToEditable(profile).favoriteGame : "",
-  );
-  const [initialPersonalInfoVisibility, setInitialPersonalInfoVisibility] = useState<
-    "public" | "friends" | "private"
-  >(profile ? profileToEditable(profile).personalInfoVisibility : "private");
+  const [ageEdit, setAgeEdit] = useState<string | null>(null);
+  const [hometownEdit, setHometownEdit] = useState<string | null>(null);
+  const [favoriteGameEdit, setFavoriteGameEdit] = useState<string | null>(null);
+  const [personalInfoVisibilityEdit, setPersonalInfoVisibilityEdit] = useState<
+    "public" | "friends" | "private" | null
+  >(null);
+
+  const display = displayEdit ?? baseline.display;
+  const canViewStats = canViewStatsEdit ?? baseline.canViewStats;
+  const age = ageEdit ?? baseline.age;
+  const hometown = hometownEdit ?? baseline.hometown;
+  const favoriteGame = favoriteGameEdit ?? baseline.favoriteGame;
+  const personalInfoVisibility = personalInfoVisibilityEdit ?? baseline.personalInfoVisibility;
+
+  const setDisplay: Dispatch<SetStateAction<string>> = (value) => {
+    setDisplayEdit((old) => {
+      const current = old ?? baseline.display;
+      return typeof value === "function" ? value(current) : value;
+    });
+  };
+
+  const setCanViewStats: Dispatch<SetStateAction<boolean>> = (value) => {
+    setCanViewStatsEdit((old) => {
+      const current = old ?? baseline.canViewStats;
+      return typeof value === "function" ? value(current) : value;
+    });
+  };
+
+  const setAge: Dispatch<SetStateAction<string>> = (value) => {
+    setAgeEdit((old) => {
+      const current = old ?? baseline.age;
+      return typeof value === "function" ? value(current) : value;
+    });
+  };
+
+  const setHometown: Dispatch<SetStateAction<string>> = (value) => {
+    setHometownEdit((old) => {
+      const current = old ?? baseline.hometown;
+      return typeof value === "function" ? value(current) : value;
+    });
+  };
+
+  const setFavoriteGame: Dispatch<SetStateAction<string>> = (value) => {
+    setFavoriteGameEdit((old) => {
+      const current = old ?? baseline.favoriteGame;
+      return typeof value === "function" ? value(current) : value;
+    });
+  };
+
+  const setPersonalInfoVisibility: Dispatch<SetStateAction<"public" | "friends" | "private">> = (
+    value,
+  ) => {
+    setPersonalInfoVisibilityEdit((old) => {
+      const current = old ?? baseline.personalInfoVisibility;
+      return typeof value === "function" ? value(current) : value;
+    });
+  };
+
   const [err, setErr] = useState<null | string>(null);
   const auth = useAuth();
 
-  useEffect(() => {
-    if (!profile) return;
-    setDisplay(profile.display);
-    setInitialDisplay(profile.display);
-    setCanViewStats(profile.canViewStats);
-    setInitialCanViewStats(profile.canViewStats);
-    const editable = profileToEditable(profile);
-    setAge(editable.age);
-    setHometown(editable.hometown);
-    setFavoriteGame(editable.favoriteGame);
-    setPersonalInfoVisibility(editable.personalInfoVisibility);
-    setInitialAge(editable.age);
-    setInitialHometown(editable.hometown);
-    setInitialFavoriteGame(editable.favoriteGame);
-    setInitialPersonalInfoVisibility(editable.personalInfoVisibility);
-  }, [profile]);
   /**
    * Handles submission of the form
    */
@@ -86,13 +118,13 @@ export default function useEditProfileForm(profile: ProfileViewInfo | null) {
     //   setErr("No changes to submit");
     //   return;
     // }
-    const noDisplayChange = display === initialDisplay;
-    const noStatsVisibilityChange = canViewStats === initialCanViewStats;
+    const noDisplayChange = display === baseline.display;
+    const noStatsVisibilityChange = canViewStats === baseline.canViewStats;
     const noPersonalInfoChange =
-      age === initialAge &&
-      hometown === initialHometown &&
-      favoriteGame === initialFavoriteGame &&
-      personalInfoVisibility === initialPersonalInfoVisibility;
+      age === baseline.age &&
+      hometown === baseline.hometown &&
+      favoriteGame === baseline.favoriteGame &&
+      personalInfoVisibility === baseline.personalInfoVisibility;
     if (noDisplayChange && password === "" && noStatsVisibilityChange && noPersonalInfoChange) {
       setErr("No changes to submit");
       return;
@@ -125,15 +157,15 @@ export default function useEditProfileForm(profile: ProfileViewInfo | null) {
     }
 
     const updates: UserUpdateRequest = {};
-    if (display !== initialDisplay) updates.display = display;
+    if (display !== baseline.display) updates.display = display;
     if (password !== "") updates.password = password;
-    if (canViewStats !== initialCanViewStats) updates.canViewStats = canViewStats;
-    if (age !== initialAge) updates.age = parsedAge;
-    if (hometown !== initialHometown)
+    if (canViewStats !== baseline.canViewStats) updates.canViewStats = canViewStats;
+    if (age !== baseline.age) updates.age = parsedAge;
+    if (hometown !== baseline.hometown)
       updates.hometown = hometown.trim() === "" ? null : hometown.trim();
-    if (favoriteGame !== initialFavoriteGame)
+    if (favoriteGame !== baseline.favoriteGame)
       updates.favoriteGame = favoriteGame.trim() === "" ? null : favoriteGame.trim();
-    if (personalInfoVisibility !== initialPersonalInfoVisibility)
+    if (personalInfoVisibility !== baseline.personalInfoVisibility)
       updates.personalInfoVisibility = personalInfoVisibility;
     const response = await updateUser(auth, updates);
     if ("error" in response) {
