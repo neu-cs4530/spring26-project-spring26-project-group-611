@@ -235,9 +235,12 @@ export default function UpdateProfile() {
       <hr />
       <div className="spacedSection">
         <h3>Personal information</h3>
-        <div className="labeled-section">
-          <label htmlFor="personalInfoVisibility">Who can view my personal information</label>
+        <div className="update-profile__personal-row">
+          <label className="update-profile__personal-label" htmlFor="personalInfoVisibility">
+            Who can view my personal information
+          </label>
           <select
+            className="widefill notTooWide"
             id="personalInfoVisibility"
             value={personalInfoVisibility}
             onChange={(e) =>
@@ -249,38 +252,44 @@ export default function UpdateProfile() {
             <option value="public"> Public</option>
           </select>
         </div>
-        <div className="labeled-section">
-          <label htmlFor="age">Age</label>
+        <div className="update-profile__personal-row">
+          <label className="update-profile__personal-label" htmlFor="age">
+            Age
+          </label>
           <input
             id="age"
             type="number"
             min={0}
             max={150}
-            className="widefillnotTooWide"
+            className="widefill notTooWide"
             value={age}
             onChange={(e) => setAge(e.target.value)}
             placeholder="Optional"
           ></input>
         </div>
-        <div className="labeled-section">
-          <label htmlFor="hometown">Hometown</label>
+        <div className="update-profile__personal-row">
+          <label className="update-profile__personal-label" htmlFor="hometown">
+            Hometown
+          </label>
           <input
             id="hometown"
-            className="widefilenotTooWide"
+            className="widefill notTooWide"
             value={hometown}
             onChange={(e) => setHometown(e.target.value)}
             placeholder="Optional"
           ></input>
-          <div className="labeled-section">
-            <label htmlFor="favoriteGame">FavoriteGame</label>
-            <input
-              id="favoriteGame"
-              className="widefilenotTooWide"
-              value={favoriteGame}
-              onChange={(e) => setFavoriteGame(e.target.value)}
-              placeholder="Optional"
-            ></input>
-          </div>
+        </div>
+        <div className="update-profile__personal-row">
+          <label className="update-profile__personal-label" htmlFor="favoriteGame">
+            FavoriteGame
+          </label>
+          <input
+            id="favoriteGame"
+            className="widefill notTooWide"
+            value={favoriteGame}
+            onChange={(e) => setFavoriteGame(e.target.value)}
+            placeholder="Optional"
+          ></input>
         </div>
       </div>
       <div className="spacedSection">

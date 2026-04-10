@@ -46,3 +46,23 @@
 .view-profile__result-loss {
   font-weight: 600;
 }
+
+.update-profile__personal-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.update-profile__personal-label {
+  min-width: 220px;
+  margin-right: 20px;
+}
+
+.update-profile__personal-row select.widefill {
+  border-radius: 0.5rem;
+  border: 1px solid var(--gray-foreground);
+  min-height: 2.5rem;
+  margin-left: 0.5rem;
+  padding-inline: 0.5rem;
+}
