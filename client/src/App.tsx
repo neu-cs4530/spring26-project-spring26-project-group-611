@@ -1,7 +1,7 @@
 /* eslint no-console: "off" */
 
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Login from "./pages/Login.tsx";
 import type { AuthContext } from "./contexts/LoginContext.ts";
 import Layout from "./components/Layout.tsx";
@@ -48,6 +48,22 @@ function NoSuchRoute() {
 
 export default function App() {
   const [auth, setAuth] = useState<AuthContext | null>(null);
+  const authUsername = auth?.user.username;
+  const authPass = auth?.pass;
+
+  useEffect(() => {
+    if (!socket || !authUsername || !authPass) {
+      return;
+    }
+
+    const authPayload = { username: authUsername, password: authPass };
+    socket.emit("userSubscribe", { auth: authPayload, payload: {} });
+
+    return () => {
+      socket.emit("userUnsubscribe", { auth: authPayload, payload: {} });
+    };
+  }, [authUsername, authPass]);
+
   return (
     socket && (
       <BrowserRouter>

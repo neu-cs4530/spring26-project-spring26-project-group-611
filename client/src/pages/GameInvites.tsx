@@ -196,7 +196,7 @@ export default function GameInvites() {
 
                 <div className="game-invites__actions">
                   <button
-                    className="game-invites__accept narrow"
+                    className="primary narrow"
                     onClick={() => void handleAccept(invite)}
                     disabled={pendingInviteId === invite.inviteId}
                   >
@@ -204,7 +204,7 @@ export default function GameInvites() {
                   </button>
 
                   <button
-                    className="game-invites__decline narrow"
+                    className="secondary narrow"
                     onClick={() => void handleDecline(invite)}
                     disabled={pendingInviteId === invite.inviteId}
                   >

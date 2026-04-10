@@ -1,10 +1,11 @@
 import express from "express";
 import supertest from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { RestAPI } from "../src/types.ts";
+import type { GameServer, RestAPI } from "../src/types.ts";
 
 vi.mock(import("../src/services/auth.service.ts"), () => ({
   checkAuth: vi.fn(),
+  getUserByUsername: vi.fn(),
 }));
 
 vi.mock(import("../src/services/friend.service.ts"), () => ({
@@ -27,8 +28,9 @@ import {
   postOutgoing,
   postRemove,
   postSend,
+  setFriendRealtimeServer,
 } from "../src/controllers/friends.controller.ts";
-import { checkAuth } from "../src/services/auth.service.ts";
+import { checkAuth, getUserByUsername } from "../src/services/auth.service.ts";
 import {
   acceptFriendRequest,
   cancelFriendRequest,
@@ -68,8 +70,14 @@ function restAppFor(handler: RestAPI) {
   return app;
 }
 
+class MockGameServer {
+  to = vi.fn(() => this);
+  emit = vi.fn();
+}
+
 beforeEach(() => {
   vi.resetAllMocks();
+  setFriendRealtimeServer(new MockGameServer() as unknown as GameServer);
 });
 
 describe("POST /api/friend-request/send", () => {
@@ -92,6 +100,8 @@ describe("POST /api/friend-request/send", () => {
 
   it("returns 400 for each service error", async () => {
     vi.mocked(checkAuth).mockResolvedValue(user);
+    const io = new MockGameServer();
+    setFriendRealtimeServer(io as unknown as GameServer);
     const errors = [
       "You cannot send a friend request to yourself",
       "User not found",
@@ -107,11 +117,18 @@ describe("POST /api/friend-request/send", () => {
       expect(response.status).toBe(400);
       expect(response.body).toStrictEqual({ error });
     }
+
+    expect(io.to).not.toHaveBeenCalled();
+    expect(io.emit).not.toHaveBeenCalled();
   });
 
   it("returns 201 on happy path", async () => {
     vi.mocked(checkAuth).mockResolvedValue(user);
     vi.mocked(sendFriendRequest).mockResolvedValue(friendRequest);
+    vi.mocked(getUserByUsername).mockResolvedValue({ username: "user2", userId: "u2" });
+
+    const io = new MockGameServer();
+    setFriendRealtimeServer(io as unknown as GameServer);
 
     const response = await supertest(restAppFor(postSend))
       .post("/test")
@@ -122,6 +139,8 @@ describe("POST /api/friend-request/send", () => {
       ...friendRequest,
       createdAt: "2025-01-01T00:00:00.000Z",
     });
+    expect(io.to).toHaveBeenCalledExactlyOnceWith("user-u2");
+    expect(io.emit).toHaveBeenCalledExactlyOnceWith("friendRequestReceived", friendRequest);
   });
 });
 
