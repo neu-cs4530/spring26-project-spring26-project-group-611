@@ -1,8 +1,8 @@
 /* eslint no-console: "off" */
 
 import express, { Router } from "express";
-import { Server } from "socket.io";
-import { withAuth } from "@gamenite/shared";
+import { Server, type Socket } from "socket.io";
+import { withAuth, type ClientToServerEvents, type ServerToClientEvents } from "@gamenite/shared";
 import { z } from "zod";
 import * as http from "node:http";
 
@@ -104,7 +104,7 @@ app.use(
     ),
 );
 
-io.on("connection", (socket) => {
+io.on("connection", (socket: Socket<ClientToServerEvents, ServerToClientEvents>) => {
   const socketId = socket.id;
   console.log(`CONN [${socketId}] connected`);
 
@@ -112,7 +112,7 @@ io.on("connection", (socket) => {
     console.log(`CONN [${socketId}] disconnected`);
   });
 
-  socket.on("userSubscribe", async (body) => {
+  socket.on("userSubscribe", async (body: Parameters<ClientToServerEvents["userSubscribe"]>[0]) => {
     try {
       const parsed = zUserSubscriptionPayload.parse(body);
       const userRecord = await enforceAuth(parsed.auth);
@@ -134,22 +134,25 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("userUnsubscribe", async (body) => {
-    try {
-      const parsed = zUserSubscriptionPayload.parse(body);
-      await enforceAuth(parsed.auth);
+  socket.on(
+    "userUnsubscribe",
+    async (body: Parameters<ClientToServerEvents["userUnsubscribe"]>[0]) => {
+      try {
+        const parsed = zUserSubscriptionPayload.parse(body);
+        await enforceAuth(parsed.auth);
 
-      const currentRoom = (socket.data as { userRoom?: string }).userRoom;
-      if (!currentRoom) {
-        return;
+        const currentRoom = (socket.data as { userRoom?: string }).userRoom;
+        if (!currentRoom) {
+          return;
+        }
+
+        await socket.leave(currentRoom);
+        (socket.data as { userRoom?: string }).userRoom = undefined;
+      } catch (err) {
+        logSocketError(socket, err);
       }
-
-      await socket.leave(currentRoom);
-      (socket.data as { userRoom?: string }).userRoom = undefined;
-    } catch (err) {
-      logSocketError(socket, err);
-    }
-  });
+    },
+  );
 
   socket.on("chatJoin", chat.socketJoin(socket, io));
   socket.on("chatLeave", chat.socketLeave(socket, io));
@@ -163,8 +166,6 @@ io.on("connection", (socket) => {
   socket.on("dmJoin", dm.socketJoin(socket, io));
   socket.on("dmLeave", dm.socketLeave(socket, io));
   socket.on("dmSendMessage", dm.socketSendMessage(socket, io));
-  socket.on("gameInviteJoin", gameInvite.socketJoin(socket, io));
-  socket.on("gameInviteLeave", gameInvite.socketLeave(socket, io));
 
   socket.on("gameInviteJoin", gameInvite.socketJoin(socket, io));
   socket.on("gameInviteLeave", gameInvite.socketLeave(socket, io));

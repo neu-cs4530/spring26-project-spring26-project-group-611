@@ -5,6 +5,7 @@ import {
   type ChatUserJoinedPayload,
   type ChatUserLeftPayload,
 } from "./chat.types.ts";
+import { type FriendRequestInfo } from "./friend.types.ts";
 import { type NewMessagePayload } from "./message.types.ts";
 import { type WithAuth } from "./auth.types.ts";
 import {
@@ -19,16 +20,22 @@ import { type SafeUserInfo } from "./user.types.ts";
  * The Socket.io interface for client to server communication
  */
 export interface ClientToServerEvents {
+  userSubscribe: (payload: WithAuth<Record<string, never>>) => void;
+  userUnsubscribe: (payload: WithAuth<Record<string, never>>) => void;
+
   chatJoin: (payload: WithAuth<string>) => void;
   chatLeave: (payload: WithAuth<string>) => void;
   chatSendMessage: (payload: WithAuth<NewMessagePayload>) => void;
+
   gameJoinAsPlayer: (payload: WithAuth<string>) => void;
   gameMakeMove: (payload: WithAuth<GameMakeMovePayload>) => void;
   gameStart: (payload: WithAuth<string>) => void;
   gameWatch: (payload: WithAuth<string>) => void;
+
   dmJoin: (payload: WithAuth<{ conversationId: string }>) => void;
   dmLeave: (payload: WithAuth<{ conversationId: string }>) => void;
   dmSendMessage: (payload: WithAuth<{ conversationId: string; text: string }>) => void;
+
   gameInviteJoin: (payload: WithAuth<Record<string, never>>) => void;
   gameInviteLeave: (payload: WithAuth<Record<string, never>>) => void;
 }
@@ -42,11 +49,13 @@ export interface ServerToClientEvents {
   chatNewMessage: (payload: ChatNewMessagePayload) => void;
   chatUserJoined: (payload: ChatUserJoinedPayload) => void;
   chatUserLeft: (payload: ChatUserLeftPayload) => void;
+
   gamePlayersUpdated: (payload: SafeUserInfo[]) => void;
   gameJoinError: (payload: string) => void;
   gameCreated: (payload: GameInfo) => void;
   gameStateUpdated: (payload: TaggedGameView & { forPlayer: boolean }) => void;
   gameWatched: (payload: GamePlayInfo) => void;
+
   dmJoined: (payload: {
     conversationId: string;
     messages: {
@@ -67,5 +76,6 @@ export interface ServerToClientEvents {
     };
   }) => void;
 
+  friendRequestReceived: (payload: FriendRequestInfo) => void;
   gameInvitesUpdated: () => void;
 }
