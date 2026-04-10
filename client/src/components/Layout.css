@@ -9,12 +9,8 @@
   --content-vh: calc(100vh - 3rem);
 }
 
-.header {
+.layout-header {
   grid-area: header;
-}
-
-.sidebar {
-  grid-area: sidebar;
 }
 
 .right_main {

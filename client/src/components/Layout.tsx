@@ -10,13 +10,11 @@ import SideBarNav from "./SideBarNav.tsx";
 export default function Layout() {
   return (
     <div id="main" className="main">
-      <div className="header">
+      <div className="layout-header">
         <Header />
       </div>
 
-      <div className="sidebar">
-        <SideBarNav />
-      </div>
+      <SideBarNav />
 
       <div id="right_main" className="right_main">
         <Outlet />
