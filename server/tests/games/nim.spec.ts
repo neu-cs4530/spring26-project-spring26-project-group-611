@@ -77,3 +77,48 @@ describe(`Nim's tagView() logic`, () => {
     });
   });
 });
+
+describe(`Nim's describeMove() logic`, () => {
+  it("Should use human-readable token words and ongoing message", () => {
+    expect(
+      nimLogic.describeMove(
+        { remaining: 21, nextPlayer: 0 },
+        { remaining: 20, nextPlayer: 1 },
+        1,
+        0,
+      ),
+    ).toBe(" took one token, leaving 20");
+    expect(
+      nimLogic.describeMove(
+        { remaining: 21, nextPlayer: 0 },
+        { remaining: 19, nextPlayer: 1 },
+        2,
+        0,
+      ),
+    ).toBe(" took two tokens, leaving 19");
+    expect(
+      nimLogic.describeMove(
+        { remaining: 21, nextPlayer: 0 },
+        { remaining: 18, nextPlayer: 1 },
+        3,
+        0,
+      ),
+    ).toBe(" took three tokens, leaving 18");
+  });
+
+  it("Should describe taking final tokens as losing the game", () => {
+    expect(
+      nimLogic.describeMove({ remaining: 1, nextPlayer: 0 }, { remaining: 0, nextPlayer: 1 }, 1, 0),
+    ).toBe(" took one token and lost the game");
+  });
+});
+
+describe(`Nim's getWinnerIndexes() logic`, () => {
+  it("Should return no winners before game is done", () => {
+    expect(nimLogic.getWinnerIndexes({ remaining: 2, nextPlayer: 1 })).toStrictEqual([]);
+  });
+
+  it("Should return nextPlayer as winner when game is done", () => {
+    expect(nimLogic.getWinnerIndexes({ remaining: 0, nextPlayer: 1 })).toStrictEqual([1]);
+  });
+});
