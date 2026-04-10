@@ -1,7 +1,7 @@
 import { withAuth, zSendGameInvitePayload, type GameInviteInfo } from "@gamenite/shared";
 import { z } from "zod";
-import { type RestAPI } from "../types.ts";
-import { checkAuth } from "../services/auth.service.ts";
+import { type RestAPI, type SocketAPI } from "../types.ts";
+import { checkAuth, enforceAuth } from "../services/auth.service.ts";
 import {
   getInvitesForUser,
   getInvitesSentByUser,
@@ -11,7 +11,14 @@ import {
   declineInvite,
 } from "../services/game.invite.service.ts";
 import { getGameById } from "../services/game.service.ts";
-import { emitGamePlayersUpdated } from "./game.controller.ts";
+import { emitGamePlayersUpdated, emitGameInvitesUpdated } from "./game.controller.ts";
+import { logSocketError } from "./socket.controller.ts";
+
+const zGameInviteRoomPayload = z.object({}).strict();
+
+function inviteRoom(username: string) {
+  return `game-invites:${username}`;
+}
 
 /**
  * POST /api/game-invite/send
@@ -41,6 +48,8 @@ export const postSend: RestAPI<GameInviteInfo> = async (req, res) => {
     res.status(400).send(result);
     return;
   }
+
+  emitGameInvitesUpdated(body.data.payload.toUsername);
   res.status(201).send(result);
 };
 
@@ -51,7 +60,7 @@ export const postSend: RestAPI<GameInviteInfo> = async (req, res) => {
  * Returns all pending game invites sent to the user
  */
 export const postIncoming: RestAPI<GameInviteInfo[]> = async (req, res) => {
-  const body = withAuth(z.object({})).safeParse(req.body);
+  const body = withAuth(z.object({}).strict()).safeParse(req.body);
   if (!body.success) {
     res.status(400).send({ error: "Poorly-formed request" });
     return;
@@ -73,7 +82,7 @@ export const postIncoming: RestAPI<GameInviteInfo[]> = async (req, res) => {
  * Returns all pending game invites sent by the user
  */
 export const postOutgoing: RestAPI<GameInviteInfo[]> = async (req, res) => {
-  const body = withAuth(z.object({})).safeParse(req.body);
+  const body = withAuth(z.object({}).strict()).safeParse(req.body);
   if (!body.success) {
     res.status(400).send({ error: "Poorly-formed request" });
     return;
@@ -96,7 +105,7 @@ export const postOutgoing: RestAPI<GameInviteInfo[]> = async (req, res) => {
  * Returns new value of the flag
  */
 export const postToggleAccept: RestAPI<{ acceptGameInvites: boolean }> = async (req, res) => {
-  const body = withAuth(z.object({})).safeParse(req.body);
+  const body = withAuth(z.object({}).strict()).safeParse(req.body);
   if (!body.success) {
     res.status(400).send({ error: "Poorly-formed request" });
     return;
@@ -123,7 +132,7 @@ export const postToggleAccept: RestAPI<{ acceptGameInvites: boolean }> = async (
  * Allows the authenticated user to accept a game invite
  */
 export const postAccept: RestAPI<GameInviteInfo> = async (req, res) => {
-  const body = withAuth(z.object({ inviteId: z.string() })).safeParse(req.body);
+  const body = withAuth(z.object({ inviteId: z.string() }).strict()).safeParse(req.body);
   if (!body.success) {
     res.status(400).send({ error: "Poorly-formed request" });
     return;
@@ -146,6 +155,9 @@ export const postAccept: RestAPI<GameInviteInfo> = async (req, res) => {
     emitGamePlayersUpdated(game.gameId, game.players);
   }
 
+  emitGameInvitesUpdated(result.toUsername);
+  emitGameInvitesUpdated(result.fromUsername);
+
   res.send(result);
 };
 
@@ -156,7 +168,7 @@ export const postAccept: RestAPI<GameInviteInfo> = async (req, res) => {
  * Allows the authenticated user to decline a game invite
  */
 export const postDecline: RestAPI<GameInviteInfo> = async (req, res) => {
-  const body = withAuth(z.object({ inviteId: z.string() })).safeParse(req.body);
+  const body = withAuth(z.object({ inviteId: z.string() }).strict()).safeParse(req.body);
   if (!body.success) {
     res.status(400).send({ error: "Poorly-formed request" });
     return;
@@ -173,5 +185,29 @@ export const postDecline: RestAPI<GameInviteInfo> = async (req, res) => {
     res.status(400).send(result);
     return;
   }
+
+  emitGameInvitesUpdated(result.toUsername);
+  emitGameInvitesUpdated(result.fromUsername);
+
   res.send(result);
+};
+
+export const socketJoin: SocketAPI = (socket) => async (body) => {
+  try {
+    const { auth } = withAuth(zGameInviteRoomPayload).parse(body);
+    const user = await enforceAuth(auth);
+    await socket.join(inviteRoom(user.username));
+  } catch (err) {
+    logSocketError(socket, err);
+  }
+};
+
+export const socketLeave: SocketAPI = (socket) => async (body) => {
+  try {
+    const { auth } = withAuth(zGameInviteRoomPayload).parse(body);
+    const user = await enforceAuth(auth);
+    await socket.leave(inviteRoom(user.username));
+  } catch (err) {
+    logSocketError(socket, err);
+  }
 };

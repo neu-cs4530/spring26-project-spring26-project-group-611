@@ -10,74 +10,91 @@ import {
 import { getGameById } from "../services/gameService.ts";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth.ts";
+import useLoginContext from "../hooks/useLoginContext.ts";
 import "./GameInvites.css";
+
+type InviteWithGame = GameInviteInfo & {
+  game: {
+    gameId: string;
+    type: "nim" | "guess";
+    status: "waiting" | "active" | "done";
+    createdAt: Date;
+    createdBy: { username: string; display: string; createdAt: Date };
+    players: { username: string; display: string; createdAt: Date }[];
+  } | null;
+};
 
 export default function GameInvites() {
   const auth = useAuth();
+  const { socket } = useLoginContext();
   const timeSince = useTimeSince();
   const navigate = useNavigate();
+
   const [state, setState] = useState<
     | { type: "loading" }
     | { type: "error"; msg: string }
-    | {
-        type: "loaded";
-        invites: (GameInviteInfo & {
-          game: {
-            gameId: string;
-            type: "nim" | "guess";
-            status: "waiting" | "active" | "done";
-            createdAt: Date;
-            createdBy: { username: string; display: string; createdAt: Date };
-            players: { username: string; display: string; createdAt: Date }[];
-          } | null;
-        })[];
-      }
+    | { type: "loaded"; invites: InviteWithGame[] }
   >({ type: "loading" });
+
   const [pendingInviteId, setPendingInviteId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function refreshInvites() {
-      const result = await getIncomingGameInvites(auth);
-      if (cancelled) return;
+    const loadInvites = () => {
+      getIncomingGameInvites(auth)
+        .then(async (result) => {
+          if (cancelled) return;
 
-      if ("error" in result) {
-        setState({ type: "error", msg: result.error });
-        return;
-      }
+          if ("error" in result) {
+            setState({ type: "error", msg: result.error });
+            return;
+          }
 
-      const invitesWithGames = await Promise.all(
-        result.map(async (invite) => {
-          const gameInfo = await getGameById(invite.gameId);
-          return { ...invite, game: "error" in gameInfo ? null : gameInfo };
-        }),
-      );
+          const invitesWithGames = await Promise.all(
+            result.map(async (invite) => {
+              const gameInfo = await getGameById(invite.gameId);
+              return {
+                ...invite,
+                game: "error" in gameInfo ? null : gameInfo,
+              };
+            }),
+          );
 
-      if (!cancelled) {
-        setState({ type: "loaded", invites: invitesWithGames });
-      }
-    }
+          if (cancelled) return;
+          setState({ type: "loaded", invites: invitesWithGames });
+        })
+        .catch((err: unknown) => {
+          if (cancelled) return;
+          setState({
+            type: "error",
+            msg: err instanceof Error ? err.message : "Could not load game invites",
+          });
+        });
+    };
 
-    void refreshInvites();
-    const intervalId = window.setInterval(() => {
-      void refreshInvites();
-    }, 3000);
+    const handleInvitesUpdated = () => {
+      loadInvites();
+    };
+
+    socket.emit("gameInviteJoin", { auth, payload: {} });
+    socket.on("gameInvitesUpdated", handleInvitesUpdated);
+
+    loadInvites();
 
     return () => {
       cancelled = true;
-      window.clearInterval(intervalId);
+      socket.off("gameInvitesUpdated", handleInvitesUpdated);
+      socket.emit("gameInviteLeave", { auth, payload: {} });
     };
-  }, [auth]);
+  }, [socket, auth]);
 
   function formatStatus(status: "waiting" | "active" | "done" | undefined) {
     if (!status) return "Unknown";
     return status[0].toUpperCase() + status.slice(1);
   }
 
-  function inviterName(
-    invite: GameInviteInfo & { game: { createdBy: { display: string } } | null },
-  ) {
+  function inviterName(invite: InviteWithGame) {
     const display = invite.game?.createdBy.display?.trim();
     return display ? display : invite.fromUsername;
   }
@@ -96,11 +113,11 @@ export default function GameInvites() {
     setState((current) => {
       if (current.type !== "loaded") return current;
       return {
-        ...current,
+        type: "loaded",
         invites: current.invites.filter((inv) => inv.inviteId !== invite.inviteId),
       };
     });
-    // Redirect to the game
+
     navigate(`/game/${invite.gameId}`);
   };
 
@@ -118,7 +135,7 @@ export default function GameInvites() {
     setState((current) => {
       if (current.type !== "loaded") return current;
       return {
-        ...current,
+        type: "loaded",
         invites: current.invites.filter((inv) => inv.inviteId !== invite.inviteId),
       };
     });
