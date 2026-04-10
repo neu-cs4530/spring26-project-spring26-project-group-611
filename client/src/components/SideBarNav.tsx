@@ -42,16 +42,20 @@ export default function SideBarNav() {
       setPendingInvites(result.length);
     }
 
-    void refreshInvites();
-    const intervalId = window.setInterval(() => {
+    const handleInvitesUpdated = () => {
       void refreshInvites();
-    }, 3000);
+    };
+
+    socket.emit("gameInviteJoin", { auth, payload: {} });
+    socket.on("gameInvitesUpdated", handleInvitesUpdated);
+    void refreshInvites();
 
     return () => {
       cancelled = true;
-      window.clearInterval(intervalId);
+      socket.off("gameInvitesUpdated", handleInvitesUpdated);
+      socket.emit("gameInviteLeave", { auth, payload: {} });
     };
-  }, [auth]);
+  }, [auth, socket]);
 
   useEffect(() => {
     let cancelled = false;

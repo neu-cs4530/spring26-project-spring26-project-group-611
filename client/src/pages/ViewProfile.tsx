@@ -89,9 +89,9 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     }
     return (
       <ul>
-        <li>Age:{profile.personalInfo.age ?? "Not provided"}</li>
-        <li>Hometown:{profile.personalInfo.hometown || "Not provided"}</li>
-        <li>Favorite game:{profile.personalInfo.favoriteGame || "Not provided"}</li>
+        <li>Age: {profile.personalInfo.age ?? "Not provided"}</li>
+        <li>Hometown: {profile.personalInfo.hometown || "Not provided"}</li>
+        <li>Favorite game: {profile.personalInfo.favoriteGame || "Not provided"}</li>
       </ul>
     );
   };

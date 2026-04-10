@@ -5,6 +5,11 @@ import type { RestAPI } from "../src/types.ts";
 
 vi.mock(import("../src/services/auth.service.ts"), () => ({
   checkAuth: vi.fn(),
+  enforceAuth: vi.fn(),
+}));
+
+vi.mock(import("../src/controllers/socket.controller.ts"), () => ({
+  logSocketError: vi.fn(),
 }));
 
 vi.mock(import("../src/services/game.invite.service.ts"), () => ({
@@ -32,8 +37,12 @@ import {
   postOutgoing,
   postSend,
   postToggleAccept,
+  socketJoin,
+  socketLeave,
 } from "../src/controllers/game.invite.controller.ts";
-import { checkAuth } from "../src/services/auth.service.ts";
+import { checkAuth, enforceAuth } from "../src/services/auth.service.ts";
+import { logSocketError } from "../src/controllers/socket.controller.ts";
+import type { GameServer, GameServerSocket } from "../src/types.ts";
 import {
   acceptInvite,
   declineInvite,
@@ -356,5 +365,85 @@ describe("POST /api/game-invite/decline", () => {
     expect(emitGameInvitesUpdated).toHaveBeenCalledTimes(2);
     expect(emitGameInvitesUpdated).toHaveBeenNthCalledWith(1, "user2");
     expect(emitGameInvitesUpdated).toHaveBeenNthCalledWith(2, "user3");
+  });
+});
+
+class MockSocket {
+  join = vi.fn();
+  leave = vi.fn();
+  emit = vi.fn();
+  to = vi.fn(() => this);
+}
+
+class MockIO {
+  to = vi.fn(() => this);
+  emit = vi.fn();
+}
+
+describe("socketJoin", () => {
+  it("logs error on bad payload", async () => {
+    const socket = new MockSocket() as unknown as GameServerSocket;
+    const io = new MockIO() as unknown as GameServer;
+
+    await socketJoin(socket, io)({});
+
+    expect(logSocketError).toHaveBeenCalledOnce();
+    expect(socket.join).not.toHaveBeenCalled();
+  });
+
+  it("logs error on failed auth", async () => {
+    const socket = new MockSocket() as unknown as GameServerSocket;
+    const io = new MockIO() as unknown as GameServer;
+    vi.mocked(enforceAuth).mockRejectedValue(new Error("Invalid auth"));
+
+    await socketJoin(socket, io)({ auth, payload: {} });
+
+    expect(logSocketError).toHaveBeenCalledOnce();
+    expect(socket.join).not.toHaveBeenCalled();
+  });
+
+  it("joins the game-invites room for the authenticated user", async () => {
+    const socket = new MockSocket() as unknown as GameServerSocket;
+    const io = new MockIO() as unknown as GameServer;
+    vi.mocked(enforceAuth).mockResolvedValue(authedUser);
+
+    await socketJoin(socket, io)({ auth, payload: {} });
+
+    expect(socket.join).toHaveBeenCalledExactlyOnceWith("game-invites:user3");
+    expect(logSocketError).not.toHaveBeenCalled();
+  });
+});
+
+describe("socketLeave", () => {
+  it("logs error on bad payload", async () => {
+    const socket = new MockSocket() as unknown as GameServerSocket;
+    const io = new MockIO() as unknown as GameServer;
+
+    await socketLeave(socket, io)({});
+
+    expect(logSocketError).toHaveBeenCalledOnce();
+    expect(socket.leave).not.toHaveBeenCalled();
+  });
+
+  it("logs error on failed auth", async () => {
+    const socket = new MockSocket() as unknown as GameServerSocket;
+    const io = new MockIO() as unknown as GameServer;
+    vi.mocked(enforceAuth).mockRejectedValue(new Error("Invalid auth"));
+
+    await socketLeave(socket, io)({ auth, payload: {} });
+
+    expect(logSocketError).toHaveBeenCalledOnce();
+    expect(socket.leave).not.toHaveBeenCalled();
+  });
+
+  it("leaves the game-invites room for the authenticated user", async () => {
+    const socket = new MockSocket() as unknown as GameServerSocket;
+    const io = new MockIO() as unknown as GameServer;
+    vi.mocked(enforceAuth).mockResolvedValue(authedUser);
+
+    await socketLeave(socket, io)({ auth, payload: {} });
+
+    expect(socket.leave).toHaveBeenCalledExactlyOnceWith("game-invites:user3");
+    expect(logSocketError).not.toHaveBeenCalled();
   });
 });

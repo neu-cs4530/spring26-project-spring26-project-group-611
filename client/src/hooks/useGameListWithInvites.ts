@@ -66,11 +66,17 @@ export default function useGameListWithInvites(
       refreshGamesWithInvites();
     };
 
+    const handleInvitesUpdated = () => {
+      refreshGamesWithInvites();
+    };
+
     refreshGamesWithInvites();
     socket.on("gameCreated", handleGameCreated);
+    socket.on("gameInvitesUpdated", handleInvitesUpdated);
 
     return () => {
       socket.off("gameCreated", handleGameCreated);
+      socket.off("gameInvitesUpdated", handleInvitesUpdated);
     };
   }, [auth, maxGames, socket]);
 
