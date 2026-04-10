@@ -17,7 +17,7 @@ import { searchUsers } from "../services/userService";
 import "./FriendRequests.css";
 
 export default function FriendRequests() {
-  const { user, pass } = useLoginContext();
+  const { user, pass, socket } = useLoginContext();
   const navigate = useNavigate();
   const timeSince = useTimeSince();
   const [state, setState] = useState<
@@ -79,6 +79,29 @@ export default function FriendRequests() {
       cancelled = true;
     };
   }, [user.username, pass]);
+
+  useEffect(() => {
+    const onFriendRequestReceived = (request: FriendRequestInfo) => {
+      setState((current) => {
+        if (current.type !== "loaded") return current;
+        if (current.requests.some((existing) => existing.id === request.id)) return current;
+
+        const nextRequests = [...current.requests, request].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+
+        return {
+          ...current,
+          requests: nextRequests,
+        };
+      });
+    };
+
+    socket.on("friendRequestReceived", onFriendRequestReceived);
+    return () => {
+      socket.off("friendRequestReceived", onFriendRequestReceived);
+    };
+  }, [socket]);
 
   const handleSearch = async () => {
     const trimmed = searchTerm.trim();

@@ -5,6 +5,7 @@ import {
   type ChatUserJoinedPayload,
   type ChatUserLeftPayload,
 } from "./chat.types.ts";
+import { type FriendRequestInfo } from "./friend.types.ts";
 import { type NewMessagePayload } from "./message.types.ts";
 import { type WithAuth } from "./auth.types.ts";
 import {
@@ -19,6 +20,8 @@ import { type SafeUserInfo } from "./user.types.ts";
  * The Socket.io interface for client to server communication
  */
 export interface ClientToServerEvents {
+  userSubscribe: (payload: WithAuth<Record<string, never>>) => void;
+  userUnsubscribe: (payload: WithAuth<Record<string, never>>) => void;
   chatJoin: (payload: WithAuth<string>) => void;
   chatLeave: (payload: WithAuth<string>) => void;
   chatSendMessage: (payload: WithAuth<NewMessagePayload>) => void;
@@ -64,4 +67,5 @@ export interface ServerToClientEvents {
       createdAt: Date;
     };
   }) => void;
+  friendRequestReceived: (payload: FriendRequestInfo) => void;
 }

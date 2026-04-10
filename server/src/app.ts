@@ -2,6 +2,7 @@
 
 import express, { Router } from "express";
 import { Server } from "socket.io";
+import { withAuth } from "@gamenite/shared";
 import { z } from "zod";
 import * as http from "node:http";
 import * as chat from "./controllers/chat.controller.ts";
@@ -12,11 +13,16 @@ import * as user from "./controllers/user.controller.ts";
 import * as thread from "./controllers/thread.controller.ts";
 import * as dm from "./controllers/dm.controller.ts";
 import { type GameServer } from "./types.ts";
+import { enforceAuth } from "./services/auth.service.ts";
+import { logSocketError } from "./controllers/socket.controller.ts";
 
 export const app = express();
 export const httpServer = http.createServer(app);
 const io: GameServer = new Server(httpServer);
 game.setGameRealtimeServer(io);
+friend.setFriendRealtimeServer(io);
+
+const zUserSubscriptionPayload = withAuth(z.object({}));
 
 app.use(express.json());
 
@@ -90,6 +96,45 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log(`CONN [${socketId}] disconnected`);
+  });
+
+  socket.on("userSubscribe", async (body) => {
+    try {
+      const parsed = zUserSubscriptionPayload.parse(body);
+      const user = await enforceAuth(parsed.auth);
+      const nextRoom = `user-${user.userId}`;
+
+      const currentRoom = (socket.data as { userRoom?: string }).userRoom;
+      if (currentRoom === nextRoom) {
+        return;
+      }
+
+      if (currentRoom) {
+        await socket.leave(currentRoom);
+      }
+
+      await socket.join(nextRoom);
+      (socket.data as { userRoom?: string }).userRoom = nextRoom;
+    } catch (err) {
+      logSocketError(socket, err);
+    }
+  });
+
+  socket.on("userUnsubscribe", async (body) => {
+    try {
+      const parsed = zUserSubscriptionPayload.parse(body);
+      await enforceAuth(parsed.auth);
+
+      const currentRoom = (socket.data as { userRoom?: string }).userRoom;
+      if (!currentRoom) {
+        return;
+      }
+
+      await socket.leave(currentRoom);
+      (socket.data as { userRoom?: string }).userRoom = undefined;
+    } catch (err) {
+      logSocketError(socket, err);
+    }
   });
 
   socket.on("chatJoin", chat.socketJoin(socket, io));
