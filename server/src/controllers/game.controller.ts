@@ -44,6 +44,13 @@ export function emitGamePlayersUpdated(gameId: string, players: SafeUserInfo[]) 
 }
 
 /**
+ * Emit an invite-list refresh event for one specific user.
+ */
+export function emitGameInvitesUpdated(username: string) {
+  realtimeServer?.to(`game-invites:${username}`).emit("gameInvitesUpdated");
+}
+
+/**
  * Handle POST requests to `/api/game/create` by creating a game. The game
  * starts with one player, the user who made the POST request.
  */

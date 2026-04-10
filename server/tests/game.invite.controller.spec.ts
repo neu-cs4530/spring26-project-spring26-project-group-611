@@ -22,6 +22,7 @@ vi.mock(import("../src/services/game.service.ts"), () => ({
 
 vi.mock(import("../src/controllers/game.controller.ts"), () => ({
   emitGamePlayersUpdated: vi.fn(),
+  emitGameInvitesUpdated: vi.fn(),
 }));
 
 import {
@@ -42,7 +43,10 @@ import {
   toggleAcceptGameInvites,
 } from "../src/services/game.invite.service.ts";
 import { getGameById } from "../src/services/game.service.ts";
-import { emitGamePlayersUpdated } from "../src/controllers/game.controller.ts";
+import {
+  emitGamePlayersUpdated,
+  emitGameInvitesUpdated,
+} from "../src/controllers/game.controller.ts";
 
 const auth = { username: "user3", password: "pwd3333" };
 const authedUser = { username: "user3", userId: "u3" };
@@ -115,6 +119,7 @@ describe("POST /api/game-invite/send", () => {
       ...inviteInfo,
       createdAt: "2025-01-01T00:00:00.000Z",
     });
+    expect(emitGameInvitesUpdated).toHaveBeenCalledExactlyOnceWith("user2");
   });
 });
 
@@ -295,6 +300,9 @@ describe("POST /api/game-invite/accept", () => {
       createdAt: "2025-01-01T00:00:00.000Z",
     });
     expect(emitGamePlayersUpdated).toHaveBeenCalledExactlyOnceWith("g1", expect.any(Array));
+    expect(emitGameInvitesUpdated).toHaveBeenCalledTimes(2);
+    expect(emitGameInvitesUpdated).toHaveBeenNthCalledWith(1, "user2");
+    expect(emitGameInvitesUpdated).toHaveBeenNthCalledWith(2, "user3");
   });
 });
 
@@ -345,5 +353,8 @@ describe("POST /api/game-invite/decline", () => {
       status: "declined",
       createdAt: "2025-01-01T00:00:00.000Z",
     });
+    expect(emitGameInvitesUpdated).toHaveBeenCalledTimes(2);
+    expect(emitGameInvitesUpdated).toHaveBeenNthCalledWith(1, "user2");
+    expect(emitGameInvitesUpdated).toHaveBeenNthCalledWith(2, "user3");
   });
 });

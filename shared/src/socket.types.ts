@@ -29,6 +29,8 @@ export interface ClientToServerEvents {
   dmJoin: (payload: WithAuth<{ conversationId: string }>) => void;
   dmLeave: (payload: WithAuth<{ conversationId: string }>) => void;
   dmSendMessage: (payload: WithAuth<{ conversationId: string; text: string }>) => void;
+  gameInviteJoin: (payload: WithAuth<Record<string, never>>) => void;
+  gameInviteLeave: (payload: WithAuth<Record<string, never>>) => void;
 }
 
 /**
@@ -64,4 +66,6 @@ export interface ServerToClientEvents {
       createdAt: Date;
     };
   }) => void;
+
+  gameInvitesUpdated: () => void;
 }

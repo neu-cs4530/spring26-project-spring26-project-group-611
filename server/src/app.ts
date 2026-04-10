@@ -103,6 +103,8 @@ io.on("connection", (socket) => {
   socket.on("dmJoin", dm.socketJoin(socket, io));
   socket.on("dmLeave", dm.socketLeave(socket, io));
   socket.on("dmSendMessage", dm.socketSendMessage(socket, io));
+  socket.on("gameInviteJoin", gameInvite.socketJoin(socket, io));
+  socket.on("gameInviteLeave", gameInvite.socketLeave(socket, io));
 
   socket.onAny((name, payload) => {
     const zPayload = z.object({ auth: z.object({ username: z.string() }), payload: z.any() });
