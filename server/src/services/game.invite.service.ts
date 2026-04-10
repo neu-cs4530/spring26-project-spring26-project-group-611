@@ -10,20 +10,18 @@ import { joinGame } from "./game.service.ts";
  */
 async function cleanupInvalidPendingInvites(): Promise<number> {
   const allKeys = await GameInviteRepo.getAllKeys();
-  let cleanedCount = 0;
-  for (const key of allKeys) {
-    const record = await GameInviteRepo.find(key);
-    //the rules of expired and unused private game invites
-    if (!record || record.status !== "pending") {
-      continue;
-    }
-    const game = await GameRepo.find(record.gameId);
-    if (!game || game.done) {
-      await GameInviteRepo.delete(key);
-      cleanedCount += 1;
-    }
-  }
-  return cleanedCount;
+  const records = await Promise.all(allKeys.map((key) => GameInviteRepo.find(key)));
+  const shouldDelete = await Promise.all(
+    allKeys.map(async (_, i) => {
+      const record = records[i];
+      if (!record || record.status !== "pending") return false;
+      const game = await GameRepo.find(record.gameId);
+      return !game || game.done;
+    }),
+  );
+  const toDelete = allKeys.filter((_, i) => shouldDelete[i]);
+  await Promise.all(toDelete.map((key) => GameInviteRepo.delete(key)));
+  return toDelete.length;
 }
 
 /**
@@ -33,8 +31,10 @@ async function toGameInviteInfo(
   inviteId: string,
   record: Awaited<ReturnType<typeof GameInviteRepo.get>>,
 ): Promise<GameInviteInfo> {
-  const fromUserRecord = await UserRepo.find(record.fromUser);
-  const toUserRecord = await UserRepo.find(record.toUser);
+  const [fromUserRecord, toUserRecord] = await Promise.all([
+    UserRepo.find(record.fromUser),
+    UserRepo.find(record.toUser),
+  ]);
   return {
     inviteId,
     gameId: record.gameId,
@@ -147,14 +147,17 @@ export async function sendGameInvite(
 export async function getInvitesForUser(userId: string): Promise<GameInviteInfo[]> {
   await cleanupInvalidPendingInvites();
   const allKeys = await GameInviteRepo.getAllKeys();
-  const results: GameInviteInfo[] = [];
-  for (const key of allKeys) {
-    const record = await GameInviteRepo.find(key);
-    if (record && record.toUser === userId && record.status === "pending") {
-      results.push(await toGameInviteInfo(key, record));
-    }
-  }
-  return results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  const records = await Promise.all(allKeys.map((key) => GameInviteRepo.find(key)));
+  const results = await Promise.all(
+    allKeys.map(async (key, i) => {
+      const record = records[i];
+      if (!record || record.toUser !== userId || record.status !== "pending") return null;
+      return toGameInviteInfo(key, record);
+    }),
+  );
+  return results
+    .filter((r): r is GameInviteInfo => r !== null)
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
 /**
@@ -166,14 +169,17 @@ export async function getInvitesForUser(userId: string): Promise<GameInviteInfo[
 export async function getInvitesSentByUser(hostUserId: string): Promise<GameInviteInfo[]> {
   await cleanupInvalidPendingInvites();
   const allKeys = await GameInviteRepo.getAllKeys();
-  const results: GameInviteInfo[] = [];
-  for (const key of allKeys) {
-    const record = await GameInviteRepo.find(key);
-    if (record && record.fromUser === hostUserId && record.status === "pending") {
-      results.push(await toGameInviteInfo(key, record));
-    }
-  }
-  return results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  const records = await Promise.all(allKeys.map((key) => GameInviteRepo.find(key)));
+  const results = await Promise.all(
+    allKeys.map(async (key, i) => {
+      const record = records[i];
+      if (!record || record.fromUser !== hostUserId || record.status !== "pending") return null;
+      return toGameInviteInfo(key, record);
+    }),
+  );
+  return results
+    .filter((r): r is GameInviteInfo => r !== null)
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
 /**
@@ -279,14 +285,19 @@ export async function declineInvite(
  */
 export async function acceptPendingInvitesForGame(userId: string, gameId: string): Promise<void> {
   const allKeys = await GameInviteRepo.getAllKeys();
-  for (const key of allKeys) {
-    const invite = await GameInviteRepo.find(key);
-    if (!invite) continue;
-    if (invite.toUser !== userId) continue;
-    if (invite.gameId !== gameId) continue;
-    if (invite.status !== "pending") continue;
-
-    invite.status = "accepted";
-    await GameInviteRepo.set(key, invite);
-  }
+  const records = await Promise.all(allKeys.map((key) => GameInviteRepo.find(key)));
+  await Promise.all(
+    allKeys.map(async (key, i) => {
+      const invite = records[i];
+      if (
+        !invite ||
+        invite.toUser !== userId ||
+        invite.gameId !== gameId ||
+        invite.status !== "pending"
+      )
+        return;
+      invite.status = "accepted";
+      await GameInviteRepo.set(key, invite);
+    }),
+  );
 }

@@ -117,8 +117,10 @@ async function toFriendRequestInfo(
   id: string,
   record: Awaited<ReturnType<typeof FriendRequestRepo.get>>,
 ): Promise<FriendRequestInfo> {
-  const fromUserRecord = await UserRepo.find(record.fromUser);
-  const toUserRecord = await UserRepo.find(record.toUser);
+  const [fromUserRecord, toUserRecord] = await Promise.all([
+    UserRepo.find(record.fromUser),
+    UserRepo.find(record.toUser),
+  ]);
   return {
     id,
     fromUsername: fromUserRecord?.username ?? record.fromUser,
@@ -225,13 +227,15 @@ export async function getIncomingFriendRequests(toUsername: string): Promise<Fri
   const userRes = await getUserByUsername(toUsername);
   if (!userRes) return [];
   const keys = await FriendRequestRepo.getAllKeys();
-  const results: FriendRequestInfo[] = [];
-  for (const key of keys) {
-    const rec = await FriendRequestRepo.find(key);
-    if (!rec || rec.status !== "pending" || rec.toUser !== userRes.userId) continue;
-    results.push(await toFriendRequestInfo(key, rec));
-  }
-  return results;
+  const records = await Promise.all(keys.map((key) => FriendRequestRepo.find(key)));
+  const results = await Promise.all(
+    keys.map(async (key, i) => {
+      const rec = records[i];
+      if (!rec || rec.status !== "pending" || rec.toUser !== userRes.userId) return null;
+      return toFriendRequestInfo(key, rec);
+    }),
+  );
+  return results.filter((r): r is FriendRequestInfo => r !== null);
 }
 
 /**
@@ -246,13 +250,15 @@ export async function getOutgoingFriendRequests(
   const userRes = await getUserByUsername(fromUsername);
   if (!userRes) return [];
   const keys = await FriendRequestRepo.getAllKeys();
-  const results: FriendRequestInfo[] = [];
-  for (const key of keys) {
-    const rec = await FriendRequestRepo.find(key);
-    if (!rec || rec.status !== "pending" || rec.fromUser !== userRes.userId) continue;
-    results.push(await toFriendRequestInfo(key, rec));
-  }
-  return results;
+  const records = await Promise.all(keys.map((key) => FriendRequestRepo.find(key)));
+  const results = await Promise.all(
+    keys.map(async (key, i) => {
+      const rec = records[i];
+      if (!rec || rec.status !== "pending" || rec.fromUser !== userRes.userId) return null;
+      return toFriendRequestInfo(key, rec);
+    }),
+  );
+  return results.filter((r): r is FriendRequestInfo => r !== null);
 }
 
 /**
