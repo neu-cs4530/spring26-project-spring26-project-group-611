@@ -5,8 +5,8 @@ import {
   type FriendRequestInfo,
   type SafeUserInfo,
 } from "@gamenite/shared";
-import { type RestAPI } from "../types.ts";
-import { checkAuth } from "../services/auth.service.ts";
+import { type GameServer, type RestAPI } from "../types.ts";
+import { checkAuth, getUserByUsername } from "../services/auth.service.ts";
 import {
   acceptFriendRequest,
   cancelFriendRequest,
@@ -18,6 +18,12 @@ import {
   removeFriend,
 } from "../services/friend.service.ts";
 import { z } from "zod";
+
+let realtimeServer: GameServer | null = null;
+
+export function setFriendRealtimeServer(io: GameServer) {
+  realtimeServer = io;
+}
 
 /**
  * POST /api/friend-request/send
@@ -42,6 +48,11 @@ export const postSend: RestAPI<FriendRequestInfo> = async (req, res) => {
   if ("error" in result) {
     res.status(400).send(result);
     return;
+  }
+
+  const recipient = await getUserByUsername(result.toUsername);
+  if (recipient) {
+    realtimeServer?.to(`user-${recipient.userId}`).emit("friendRequestReceived", result);
   }
 
   res.status(201).send(result);
